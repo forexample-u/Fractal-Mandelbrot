@@ -346,10 +346,6 @@ struct quternion {
 	}
 };
 
-double dot(quternion a, quternion b) {
-	return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w;
-}
-
 inline void mandelbrot(double* arrays, int fractal_index, double z_x, double z_i, double c_x, double c_i, double factor, double power, double range, double inverse, double mult_power, int ismandel, int width, int height, int max_iteration, long max_sample) {
 	double x_set = ismandel ? c_x : z_x;
 	double i_set = ismandel ? c_i : z_i;
@@ -410,7 +406,7 @@ inline void mandelbrot(double* arrays, int fractal_index, double z_x, double z_i
 					z_imag_prev = z_imag;
 					z_real_prev = z_real;
 				}
-				if (fractal_index < 3) {
+				if (fractal_index < 3) { // mandelbrot
 					if (fractal_index == 1) { // tricorn
 						z_imag_prev = -z_imag_prev;
 					}
@@ -525,7 +521,7 @@ inline void mandelbulb(double* arrays, int fractal_index, double z_x, double z_y
 	double real_power = power * mult_power, z_x_tmp, z_y_tmp, z_z_tmp, z_x_2, z_y_2, z_z_2, p_x = -0.5, p_y = 0.0, p_z = 0.0;
 	int is_power_two = power == 2.0 && phi_shift == 0.0 && mult_power == 1.0;
 	int max_iterations = max_iteration / 5;
-	range = range * 4.0;
+	range = range * 4.0; formula = 0;
 	for (int y = 0; y < height; y++) {
 		for (int x = 0; x < width; x++) {
 			double uv_x = x_min + x * dx;
@@ -553,7 +549,6 @@ inline void mandelbulb(double* arrays, int fractal_index, double z_x, double z_y
 				double dr = 1.0, sin_theta = 0.0, zr, phi, theta, cos_phi, dist = 0.0;
 				double z_x_prev = 0.0, z_y_prev = 0.0, z_z_prev = 0.0, r = 0.0;
 				int orbit = 0;
-
 				double c_x = ismandel ? z.x : cx;
 				double c_y = ismandel ? z.y : cy;
 				double c_z = ismandel ? z.z : 0.0;
@@ -561,116 +556,77 @@ inline void mandelbulb(double* arrays, int fractal_index, double z_x, double z_y
 					double c_pow_sum = c_x * c_x + c_y * c_y + c_z * c_z;
 					c_x = inverse * (c_x / c_pow_sum) + ((1.0 - inverse) * c_x);
 					c_y = inverse * (c_y / c_pow_sum) + ((1.0 - inverse) * c_y);
-					c_z = -inverse * (c_z / c_pow_sum) + ((1.0 - inverse) * c_z);
+					c_z = inverse * (c_z / c_pow_sum) + ((1.0 - inverse) * c_z);
 				}
 				double z_x = ismandel ? c_x : z.x;
 				double z_y = ismandel ? c_y : z.y;
 				double z_z = ismandel ? c_z : z.z;
-				if (1 == 1) {
-					for (int j = 1; j < max_iterations; j++) {
-						double zx2 = z_x * z_x;
-						double zy2 = z_y * z_y;
-						double zz2 = z_z * z_z;
-						double zxy2 = zx2 + zy2;
-						r = sqrt(zxy2 + zz2);
-						if (r > range) {
-							orbit = j;
-							break;
+				for (int j = 1; j < max_iterations; j++) {
+					double zx2 = z_x * z_x;
+					double zy2 = z_y * z_y;
+					double zz2 = z_z * z_z;
+					double zxy2 = zx2 + zy2;
+					r = sqrt(zxy2 + zz2);
+					if (r > range) {
+						orbit = j;
+						break;
+					}
+					if (fractal_index == 2) {
+						z_x = fabs(z_x);
+						z_y = fabs(z_y);
+						z_z = -fabs(z_z);
+					}
+					if (1 == 0) {
+						if (is_power_two) {
+							dr = r * dr * 2.0 + 1.0;
+							z_x_prev = zx2 - zy2 - zz2;
+							z_y_prev = 2.0 * z_x * z_y;
+							z_z_prev = 2.0 * z_x * z_z;
 						}
-						if (fractal_index == 2) {
-							z_x = abs(z_x);
-							z_y = abs(z_y);
-							z_z = z_z;
-
-							// it's work too, maybe better
-							//z_x = -abs(z_x);
-							//z_y = -abs(z_y);
-							//z_z = -abs(z_z);
-						}
-						if (1 == 0) {
-							if (is_power_two) {
-								dr = r * dr * 2.0 + 1.0;
-								z_x_prev = zx2 - zy2 - zz2;
-								z_y_prev = 2.0 * z_x * z_y;
-								z_z_prev = 2.0 * z_x * z_z;
-							}
-						}
-						if (1 == 1) {
-							if (is_power_two) {
-								dr = r * dr * 2.0 + 1.0;
-								double a = 1.0 - zz2 / zxy2;
-								z_y_prev = 2.0 * z_y * z_x * a;
-								z_z_prev = 2.0 * z_z * sqrt(zxy2);
-								z_x_prev = (zx2 - zy2) * a;
-							}
-							else {
-								dr = fast_pow(r, power - 1.0) * dr * power + 1.0;
-								phi = asin(z_z / r) + phi_shift;
-								theta = atan2(z_y, z_x);
-								zr = fast_pow(r, real_power);
-								cos_phi = cos(power * phi);
-								z_x_prev = zr * cos(power * theta) * cos_phi;
-								z_y_prev = zr * sin(power * theta) * cos_phi;
-								z_z_prev = zr * sin(power * phi);
-							}
-						}
-						if (1 == 0) {
-							zr = pow(r, power);
-							theta = acos(z_z / r);
-							phi = atan2(z_y, z_x);
-							sin_theta = sin(power * theta);
-							z_x_prev = sin_theta * cos(power * phi) * zr;
-							z_y_prev = sin_theta * sin(power * phi) * zr;
-							z_z_prev = cos(power * theta) * zr;
-							dr = pow(r, power - 1.0) * dr * power + 1.0;
-						}
-						if (fractal_index < 3) {
-							if (fractal_index == 1) { // tricorn
-								z_y_prev = -z_y_prev;
-								z_z_prev = z_z_prev; // minus
-							}
-							z_x = z_x_prev;
-							z_y = z_y_prev;
-							z_z = z_z_prev;
+					}
+					if (formula == 0) {
+						if (is_power_two) {
+							dr = r * dr * 2.0 + 1.0;
+							double a = 1.0 - zz2 / zxy2;
+							z_y_prev = 2.0 * z_y * z_x * a;
+							z_z_prev = 2.0 * z_z * sqrt(zxy2);
+							z_x_prev = (zx2 - zy2) * a;
 						}
 						else {
-							double kx = exp(r);
-							z_x_prev = z_x_prev / kx;
-							z_y_prev = z_y_prev / kx;
-							z_z_prev = z_z_prev / kx;
-
-							z_x = z_x_prev;
-							z_y = z_y_prev;
-							z_z = z_z_prev;
+							dr = fast_pow(r, power - 1.0) * dr * power + 1.0;
+							phi = asin(z_z / r) + phi_shift;
+							theta = atan2(z_y, z_x);
+							zr = fast_pow(r, real_power);
+							cos_phi = cos(power * phi);
+							z_x_prev = zr * cos(power * theta) * cos_phi;
+							z_y_prev = zr * sin(power * theta) * cos_phi;
+							z_z_prev = zr * sin(power * phi);
 						}
-						z_x = z_x + c_x;
-						z_y = z_y + c_y;
-						z_z = z_z + c_z;
 					}
-					dist = 0.5 * log(r) * r / dr;
-				}
-				else {
-					// try create collatz formula by quternion
-					quternion z1 = quternion{ z.x, z.y, z.z, 0.0 };
-					dr = 1.0;
-					double c_w = 0.0;
-					//z1 = ((7.0 * z1 + 2.0) - qcos(3.141 * z1) * (5.0 * z1 + 2.0)) * 0.25;
-					for (int j = 0; j < max_iterations; j++) {
-						r = dot(z1, z1);
-						z1 = quternion{ abs(z1.x), abs(z1.y), (z1.z), (z1.w) };
-						if (r > range * 1000.0) { orbit = j; break; }
-						//z1 = vec4{ z1.x, -z1.y, -z1.z, -z1.w };
-						z1 = z1 * z1;
-						//z1 = ((7.0 * z1 + 2.0) - (3.141 * z1) * (5.0 * z1 + 2.0)) * 0.25;
-						dr = r * dr * 4.0;
-						z1.x += c_x;
-						z1.y += c_y;
-						z1.z += c_z;
-						z1.w += c_w;
+					else if (formula == 1) {
+						zr = pow(r, power);
+						theta = acos(z_z / r);
+						phi = atan2(z_y, z_x);
+						sin_theta = sin(power * theta);
+						z_x_prev = sin_theta * cos(power * phi) * zr;
+						z_y_prev = sin_theta * sin(power * phi) * zr;
+						z_z_prev = cos(power * theta) * zr;
+						dr = pow(r, power - 1.0) * dr * power + 1.0;
 					}
-					dist = 0.25 * sqrt(r / dr) * log(r);
+					if (fractal_index < 3) {
+						if (fractal_index == 1) { // tricorn
+							z_y_prev = -z_y_prev;
+							z_z_prev = z_z_prev; // minus
+						}
+						z_x = z_x_prev;
+						z_y = z_y_prev;
+						z_z = z_z_prev;
+					}
+					z_x = z_x + c_x;
+					z_y = z_y + c_y;
+					z_z = z_z + c_z;
 				}
-
+				dist = 0.5 * log(r) * r / dr;
 				dO += dist;
 				if (surf_dist == 0.0) { surf_dist = dist * min_dist; }
 				if (dist < surf_dist) { ot = i; col = (double)orbit; break; }
@@ -713,7 +669,7 @@ inline void buddhabrot(double* arrays, int fractal_index, double z_x, double z_i
 	int area = width * height;
 	if (fractal_index == 6) { range = pow(range, 21.0); }
 	for (long i = 0; i < max_sample; i++) {
-		z_real2 = 0.0; z_imag2 = 0.0;
+		z_real2 = z_imag2 = 0.0;
 		current = (166421U * current + 1054222352U) % distrub;
 		rand_real = current * mult_distrub;
 		current = (1664525U * current + 1013904223U) % distrub;
@@ -738,7 +694,7 @@ inline void buddhabrot(double* arrays, int fractal_index, double z_x, double z_i
 				z_real = fabs(z_real);
 				z_imag = fabs(z_imag);
 			}
-			if (is_power_two) {
+			if (is_power_two) { // z ^ 2
 				z_imag_prev = 2.0 * z_imag * z_real;
 				z_real_prev = z_real_power - z_imag_power;
 			}
@@ -843,8 +799,7 @@ inline void buddhabrot(double* arrays, int fractal_index, double z_x, double z_i
 				is_escape = 1;
 				z_real = z_old_real;
 				z_imag = z_old_imag;
-				z_real2 = 0.0;
-				z_imag2 = 0.0;
+				z_real2 = z_imag2 = 0.0;
 			}
 		}
 	}
@@ -860,8 +815,7 @@ inline void mandelbrot_complex(double* arrays, int fractal_index, double z_x, do
 	double y_max = i_set + factor;
 	double dx = (x_max - x_min) / (width - 1);
 	double dy = (y_max - y_min) / (height - 1);
-	double c_real = 0, c_imag = 0, z_real = 0.0, z_imag = 0.0, z_power_sum = 0.0, z_real_power, z_imag_power;
-
+	double c_real = 0.0, c_imag = 0.0, z_real = 0.0, z_imag = 0.0, z_power_sum = 0.0;
 	for (int y = 0; y < height; y++) {
 		for (int x = 0; x < width; x++) {
 			c_real = ismandel ? x_min + x * dx : c_x;
@@ -873,17 +827,13 @@ inline void mandelbrot_complex(double* arrays, int fractal_index, double z_x, do
 			}
 			z_real = ismandel ? c_real : x_min + x * dx;
 			z_imag = ismandel ? c_imag : y_min + y * dy;
-
 			std::complex<double> c(c_real, c_imag);
 			std::complex<double> z(z_real, z_imag);
-			std::complex<double> s(z_real, z_imag);
-
 			std::complex<double> m(exp(1), power);
-
 			int value = 0;
 			for (int k = 0; k < max_iteration * 0.8; k++) {
 				if (fractal_index == 2) {
-					z = std::complex<double>(abs(z.real()), abs(z.imag()));
+					z = std::complex<double>(fabs(z.real()), fabs(z.imag()));
 				}
 				if (fractal_index < 3) {
 					if (fractal_index == 1) {
@@ -918,9 +868,9 @@ inline void lyapunov(double* arrays, double z_x, double z_i, double c_x, double 
 	double dy = (y_max - y_min) / (height - 1);
 	double c_real, c_imag, z_real, z_imag, power_sum_invert;
 	double lambda, max_lambda = 120000.0, xn = 0.5, r = 0.0, ri = 0.0, iteration_less = 1.0 / (double)max_iteration;
-	int n = 0, index = 0, n0 = clamp(minimum(max_iteration / 5, max_iteration - max_iteration / 5), 1, max_iteration);
 	int coord_use[] = { 1, 0 };
 	int coord_count = (int)sizeof(coord_use) / sizeof(coord_use[0]), value = 0;
+	int n = 0, index = 0, n0 = clamp(minimum(max_iteration / 5, max_iteration - max_iteration / 5), 1, max_iteration);
 	for (int y = 0; y < height; y++) {
 		for (int x = 0; x < width; x++) {
 			c_real = ismandel ? x_min + x * dx : c_x;
@@ -1008,8 +958,7 @@ int main() {
 	int width = 0, height = 0, old_width = 0, old_height = 0, render_width = 1920, render_height = 1080;
 	int is_mandel = 1, is_buddha = 0, is_render = 0, is_ansi = use_ansi, is_delete_button = 0, is_mandelbulb = 0;
 	int fractal_count = 11, fractal_index = 0, array_index = 0;
-	int r = -2, g = -2, b = -2;
-	int tmp_r = -1, tmp_g = -1, tmp_b = -1;
+	int r = -2, g = -2, b = -2, tmp_r = -1, tmp_g = -1, tmp_b = -1;
 	int iteration = 100, type_fractal = 0;
 	int frame = 0;
 	char key = '\b';
@@ -1018,8 +967,7 @@ int main() {
 	double* prewiew_julia = (double*)malloc(sizeof(double));
 	double* render = (double*)malloc(render_width * render_height * sizeof(double));
 	std::vector<char> repeats_button;
-	char* row = (char*)malloc(sizeof(char));
-	char* row1 = (char*)malloc(sizeof(char));
+	std::string row, row1;
 	ColorBit last_color = Black;
 	ColorBit temp_color = Black;
 	ColorBit style[] = { Blue, DarkCyan, Cyan, DarkGreen, Green, Yellow, DarkGray, Red, DarkRed, Black };
@@ -1039,13 +987,9 @@ int main() {
 				free(prewiew_julia);
 				free(prewiew_mandelbrot);
 				free(prewiew);
-				free(row1);
-				free(row);
 				prewiew = (double*)malloc(width * height * sizeof(double));
 				prewiew_mandelbrot = (double*)malloc((width / 2) * height * sizeof(double));
 				prewiew_julia = (double*)malloc((width / 2) * height * sizeof(double));
-				row1 = (char*)malloc((width + 1) * sizeof(char));
-				row = (char*)malloc((width * height * 23 + 1) * sizeof(char));
 			}
 			old_width = width;
 			old_height = height;
@@ -1076,10 +1020,8 @@ int main() {
 					}
 				}
 			}
-
 			array_index = 0;
 			if (is_ansi) {
-				int row_size = 0;
 				int div = is_buddha ? 5 : 5;
 				mult_light = light * 1.3333333; // 1.3333333 | 1.15
 				for (int y = 0; y < height - 1; y++) {
@@ -1092,15 +1034,9 @@ int main() {
 							if (ot_div != 0.0) {
 								double bright = (1.0 - 1.5 * pow(ot_div, 1.1)) * (mult_light / 2.35853327437);
 								vec3 color = hue(0.85, 0.45, 0.15, 1.0 + clamp(col, 3.0, 20.0) * 80.0);
-								r = color.x * bright * 255.0;
-								g = color.y * bright * 255.0;
-								b = color.z * bright * 255.0;
-								if (r >= 255.0) { r = 255.0; }
-								if (g >= 255.0) { g = 255.0; }
-								if (b >= 255.0) { b = 255.0; }
-								if (r < 0.0) { r = 0.0; }
-								if (g < 0.0) { g = 0.0; }
-								if (b < 0.0) { b = 0.0; }
+								r = clamp(color.x * bright * 255.0, 0, 255);
+								g = clamp(color.y * bright * 255.0, 0, 255);
+								b = clamp(color.z * bright * 255.0, 0, 255);
 							}
 						}
 						else {
@@ -1109,80 +1045,60 @@ int main() {
 							g = bounce(val * 2.0, 0, 255, div);
 							b = bounce(val * 3.0, 0, 255, div);
 						}
-						row[row_size++] = '.';
+						row.push_back('.');
 						if (tmp_r != r || tmp_g != g || tmp_b != b) {
-							row[row_size++] = '\x1b';
-							row[row_size++] = '[';
-							row[row_size++] = '3';
-							row[row_size++] = '8';
-							row[row_size++] = ';';
-							row[row_size++] = '2';
-							row[row_size++] = ';';
-							if (r >= 100) { row[row_size++] = r / 100 + '0'; }
-							if (r >= 10) { row[row_size++] = r / 10 % 10 + '0'; }
-							row[row_size++] = r % 10 + '0';
-							row[row_size++] = ';';
-							if (g >= 100) { row[row_size++] = g / 100 + '0'; }
-							if (g >= 10) { row[row_size++] = g / 10 % 10 + '0'; }
-							row[row_size++] = g % 10 + '0';
-							row[row_size++] = ';';
-							if (b >= 100) { row[row_size++] = b / 100 + '0'; }
-							if (b >= 10) { row[row_size++] = b / 10 % 10 + '0'; }
-							row[row_size++] = b % 10 + '0';
-							row[row_size++] = ';';
-							row[row_size++] = '7';
-							row[row_size++] = 'm';
+							row.append("\x1b[38;2;");
+							if (r >= 100) { row.push_back(r / 100 + '0'); }
+							if (r >= 10) { row.push_back(r / 10 % 10 + '0'); }
+							row.push_back(r % 10 + '0');
+							row.push_back(';');
+							if (g >= 100) { row.push_back(g / 100 + '0'); }
+							if (g >= 10) { row.push_back(g / 10 % 10 + '0'); }
+							row.push_back(g % 10 + '0');
+							row.push_back(';');
+							if (b >= 100) { row.push_back(b / 100 + '0'); }
+							if (b >= 10) { row.push_back(b / 10 % 10 + '0'); }
+							row.push_back(b % 10 + '0');
+							row.append(";7m");
 							tmp_r = r; tmp_g = g; tmp_b = b;
 						}
 					}
-					row[row_size++] = '\n';
 				}
-				print_console(row, row_size);
-				row_size = 0;
+				print_console(row.c_str(), row.size());
+				row.clear();
 			}
 
 			if (!is_ansi) {
 				color(temp_color, Black);
 				double iteration_less = 1.0 / (double)iteration * (style_size - 1);
-				int row1_size = 0;
 				for (int y = 0; y < height - 1; y++) {
 					for (int x = 0; x < width; x++) {
 						double val = prewiew[array_index++];
 						if (is_mandelbulb) {
 							double col = val <= 0 ? 0 : (int)val;
 							double ot_div = val - col;
-							double bright = (1.0 - 1.5 * pow(ot_div, 1.1));
-							vec3 hueo = hue(0.15, 0.45, 0.85, 1.0 + clamp(col, 3, 20) * 80.0);
-							if (ot_div == 0.0) {
-								r = g = b = 0;
+							if (ot_div != 0.0) {
+								double bright = (1.0 - 1.5 * pow(ot_div, 1.1));
+								vec3 color = hue(0.15, 0.45, 0.85, 1.0 + clamp(col, 3, 20) * 80.0);
+								r = clamp(color.x * bright * 255.0, 0, 255);
+								g = clamp(color.y * bright * 255.0, 0, 255);
+								b = clamp(color.z * bright * 255.0, 0, 255);
+								val = (r + g + b) / 3.0;
 							}
-							else {
-								r = hueo.x * bright * 255.0;
-								g = hueo.y * bright * 255.0;
-								b = hueo.z * bright * 255.0;
-								if (r >= 255.0) { r = 255.0; }
-								if (g >= 255.0) { g = 255.0; }
-								if (b >= 255.0) { b = 255.0; }
-								if (r < 0.0) { r = 0.0; }
-								if (g < 0.0) { g = 0.0; }
-								if (b < 0.0) { b = 0.0; }
-							}
-							val = (r + g + b) / 3.0;
 						}
-
 						double value = bounce(val, 0, 255, 5) * 3.0;
 						temp_color = style[(int)(value * iteration_less) % style_size];
 						if (last_color != temp_color) {
-							print_console(row1, row1_size);
-							row1_size = 0;
+							print_console(row1.c_str(), row1.size());
+							row1.clear();
 							last_color = temp_color;
 							color(temp_color, Black);
 						}
-						row1[row1_size++] = gradient[(int)value % gradient_size];
+						row1.push_back(gradient[(int)value % gradient_size]);
 					}
-					row1[row1_size++] = '\n';
-					print_console(row1, row1_size);
-					row1_size = 0;
+					row1.push_back('\n');
+					print_console(row1.c_str(), row1.size());
+					row1.clear();
 				}
 			}
 			gotoxy(0, 0);
@@ -1191,31 +1107,21 @@ int main() {
 				long render_sample = 5000000; // 5000000
 				double render_light_mult = 1.5; // 1
 				int iteration_mult = 1; // 12
-				int image_width = image.get_width();
-				int image_height = image.get_height();
-				get_fractal(render, fractal_index, is_buddha + is_mandelbulb * 2, z_x, z_y, c_x, c_y, is_mandel ? factor_mandelbrot : factor_julia, power, range, inverse, mult_power, is_mandel, image_width, image_height, iteration >= 50 ? iteration * iteration_mult : iteration, mult_sample * render_sample, min_dist, rot_x, rot_z, raymarch_iterations, phi_shift);
+				get_fractal(render, fractal_index, is_buddha + is_mandelbulb * 2, z_x, z_y, c_x, c_y, is_mandel ? factor_mandelbrot : factor_julia, power, range, inverse, mult_power, is_mandel, render_width, render_height, iteration >= 50 ? iteration * iteration_mult : iteration, mult_sample * render_sample, min_dist, rot_x, rot_z, raymarch_iterations, phi_shift);
 				mult_light = light * render_light_mult * (is_buddha ? 0.125 : 1.5);
-				for (int y = 0; y < image_height - 1; y++) {
-					for (int x = 0; x < image_width; x++) {
+				for (int y = 0; y < render_height; y++) {
+					for (int x = 0; x < render_width; x++) {
 						val = render[array_index++];
 						if (is_mandelbulb) {
 							double col = val <= 0 ? 0 : (int)val;
 							double ot_div = val - col;
-							double bright = (1.0 - 1.5 * pow(ot_div, 1.1));
-							vec3 hueo = hue(0.85, 0.45, 0.15, 1.0 + clamp(col, 3.0, 20.0) * 80.0);
-							if (ot_div == 0.0) {
-								r = g = b = 0;
-							}
-							else {
-								r = hueo.x * bright * 255.0;
-								g = hueo.y * bright * 255.0;
-								b = hueo.z * bright * 255.0;
-								if (r >= 255.0) { r = 255.0; }
-								if (g >= 255.0) { g = 255.0; }
-								if (b >= 255.0) { b = 255.0; }
-								if (r < 0.0) { r = 0.0; }
-								if (g < 0.0) { g = 0.0; }
-								if (b < 0.0) { b = 0.0; }
+							r = g = b = 0;
+							if (ot_div != 0.0) {
+								double bright = (1.0 - 1.5 * pow(ot_div, 1.1));
+								vec3 hueo = hue(0.85, 0.45, 0.15, 1.0 + clamp(col, 3.0, 20.0) * 80.0);
+								r = clamp(hueo.x * bright * 255.0, 0, 255);
+								g = clamp(hueo.y * bright * 255.0, 0, 255);
+								b = clamp(hueo.z * bright * 255.0, 0, 255);
 							}
 						}
 						else {
@@ -1272,7 +1178,7 @@ int main() {
 					if (button == ')') { phi_speed_mult *= 2.0; }
 					if (button == 'I') { phi_shift += factor_mandelbrot * move_scale * phi_speed_mult; }
 					if (button == 'G') { phi_shift = 0.0; }
-					if (button == 'Y') { fomula_3d = 1; }
+					if (button == 'Y') { fomula_3d = !fomula_3d; }
 				}
 				else {
 					if (button == 'E') { factor_mandelbrot *= 0.95; }
@@ -1373,10 +1279,7 @@ int main() {
 					std::ifstream fin("button.txt");
 					std::string line;
 					while (std::getline(fin, line)) {
-						std::vector<char> chars;
-						for (const char ch : line) {
-							chars.push_back(ch);
-						}
+						std::vector<char> chars(line.begin(), line.end());
 						sequence_button.push_back(chars);
 					}
 					fin.close();
