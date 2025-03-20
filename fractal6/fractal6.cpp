@@ -73,7 +73,7 @@ inline double fast_pow(double a, double b) {
 	return 1.0 / pow(a, -b);
 }
 
-double fast_log(double a) {
+inline double fast_log(double a) {
 	union { double d; long long i; } u;
 	u.d = a;
 	return (u.i - 4606921278410026770LL) * 1.539095918623324e-16;
@@ -81,10 +81,6 @@ double fast_log(double a) {
 
 inline int clamp(int x, int minimum, int maximum) {
 	return x <= minimum ? minimum : x >= maximum ? maximum : x;
-}
-
-inline int minimum(int a, int b) {
-	return a < b ? a : b;
 }
 
 inline int bounce(int x, int min, int max, int divide_max_value) {
@@ -98,6 +94,7 @@ inline int bounce(int x, int min, int max, int divide_max_value) {
 	return (x / divide_max_value) % max;
 }
 
+#define min(a, b) a < b ? a : b
 #define atan2 fast_atan2
 #define cos fast_cos
 #define sin fast_sin
@@ -171,15 +168,8 @@ inline Size get_size_screen() {
 }
 
 inline int ansi_color_to_windows_color(int color_bit) {
-	int color = color_bit;
-	if (color_bit == 1) { color = 4; };
-	if (color_bit == 4) { color = 1; };
-	if (color_bit == 3) { color = 6; };
-	if (color_bit == 6) { color = 3; };
-	if (color_bit == 1 + 8) { color = 4 + 8; };
-	if (color_bit == 4 + 8) { color = 1 + 8; };
-	if (color_bit == 3 + 8) { color = 6 + 8; };
-	if (color_bit == 6 + 8) { color = 3 + 8; };
+	static const int color_map[16] = { 0, 4, 2, 6, 1, 5, 3, 7, 8, 12, 10, 14, 9, 13, 11, 15 };
+	int color = (color_bit >= 0 && color_bit <= 15) : color_map[color_bit] : color_bit;
 	return color;
 }
 
@@ -217,10 +207,10 @@ int __kbhit() {
 }
 
 int getch_toupper() {
-	int button = toupper(this->getch());
+	int button = toupper(__getch());
 	if (button == '\033') {
-		unsigned char new_button = this->getch();
-		new_button = this->getch();
+		unsigned char new_button = __getch();
+		new_button = __getch();
 		if (new_button == 'A') { button = 'W'; }
 		if (new_button == 'B') { button = 'S'; }
 		if (new_button == 'D') { button = 'A'; }
@@ -233,7 +223,6 @@ inline void print_console(const char* str, int length) {
 	printf("%s", str); //std::cout << std::flush;
 }
 #endif // Linux
-
 
 class ImageBmp {
 public:
@@ -253,12 +242,12 @@ public:
 
 	inline void save_as(const std::string& filename) {
 		stream.open(filename, std::ofstream::binary);
+		int iter = 0;
 		int extra_bytes = 4 - ((width * 3) % 4);
 		if (extra_bytes == 4) {
 			extra_bytes = 0;
 		}
 		unsigned int padded_size = ((width * 3) + extra_bytes) * height;
-		int iter = 0;
 		unsigned int one_headers[6]{ padded_size + 54, 0, 54, 40, width, height };
 		unsigned int two_headers[6]{ 0, padded_size, 0, 0, 0, 0 };
 		std::vector<unsigned char> line_headers(54);
@@ -360,7 +349,7 @@ inline void mandelbrot(double* arrays, int fractal_index, double z_x, double z_i
 	double z_temp_real = 0.0, z_temp_imag = 0.0, z_real2 = 0.0, z_imag2 = 0.0, p_real = -0.5, p_imag = 0.0, z_real_minus_tmp_real_power = 0.0, z_imag_minus_tmp_imag_power = 0.0;
 	int n = 0, index = 0, escape_newton = 0;
 	int is_power_two = power == 2.0 && mult_power == 1.0, is_not_power_one = !(power == 1.0 && mult_power == 1.0);
-	double log_value = power > 2 ? 1.0 / fast_log(power > 0.0 ? power : -power) : 1.44269504088896, z_imag_old = 0.0, p_y = 0.0;
+	double log_value = power > 2 ? 1.0 / fast_log(power > 0.0 ? power : -power) : 1.44269504088896, p_y = 0.0;
 	double half_log_value = log_value * 0.5, real_power = power * 0.5 * mult_power, real_newton_power = (power - 1.0) * 0.5 * mult_power;
 	if (fractal_index == 9) { range = pow(10, 21.0); }
 	if (fractal_index == 6) { range = pow(range, 21.0); }
@@ -513,14 +502,12 @@ inline void mandelbulb(double* arrays, int fractal_index, double z_x, double z_y
 	double y_max = i_set + factor_one;
 	double dx = (x_max - x_min) / (width - 1);
 	double dy = (y_max - y_min) / (height - 1);
-	int index = 0;
 	double cam_ro_x = (ismandel ? cx : z_x);
 	double cam_ro_y = (ismandel ? cy : z_y);
 	double cam_ro_z = -factor;
-	double surf_dist = 0.0;
-	double real_power = power * mult_power, z_x_tmp, z_y_tmp, z_z_tmp, z_x_2, z_y_2, z_z_2, p_x = -0.5, p_y = 0.0, p_z = 0.0;
+	double real_power = power * mult_power, surf_dist = 0.0, z_x_tmp, z_y_tmp, z_z_tmp, z_x_2, z_y_2, z_z_2, p_x = -0.5, p_y = 0.0, p_z = 0.0;
 	int is_power_two = power == 2.0 && phi_shift == 0.0 && mult_power == 1.0;
-	int max_iterations = max_iteration / 5;
+	int max_iterations = max_iteration / 5, index = 0;
 	range = range * 4.0; formula = 0;
 	for (int y = 0; y < height; y++) {
 		for (int x = 0; x < width; x++) {
@@ -546,8 +533,8 @@ inline void mandelbulb(double* arrays, int fractal_index, double z_x, double z_y
 				tmp_z = c * z.z - s * z.x;
 				z.x = c * z.x + s * z.z;
 				z.z = tmp_z;
-				double dr = 1.0, sin_theta = 0.0, zr, phi, theta, cos_phi, dist = 0.0;
-				double z_x_prev = 0.0, z_y_prev = 0.0, z_z_prev = 0.0, r = 0.0;
+				double dr = 1.0, a = 0.0, r = 0.0, sin_theta = 0.0, zr, phi, theta, cos_phi, dist = 0.0;
+				double z_x_prev = 0.0, z_y_prev = 0.0, z_z_prev = 0.0;
 				int orbit = 0;
 				double c_x = ismandel ? z.x : cx;
 				double c_y = ismandel ? z.y : cy;
@@ -587,7 +574,7 @@ inline void mandelbulb(double* arrays, int fractal_index, double z_x, double z_y
 					if (formula == 0) {
 						if (is_power_two) {
 							dr = r * dr * 2.0 + 1.0;
-							double a = 1.0 - zz2 / zxy2;
+							a = 1.0 - zz2 / zxy2;
 							z_y_prev = 2.0 * z_y * z_x * a;
 							z_z_prev = 2.0 * z_z * sqrt(zxy2);
 							z_x_prev = (zx2 - zy2) * a;
@@ -870,7 +857,7 @@ inline void lyapunov(double* arrays, double z_x, double z_i, double c_x, double 
 	double lambda, max_lambda = 120000.0, xn = 0.5, r = 0.0, ri = 0.0, iteration_less = 1.0 / (double)max_iteration;
 	int coord_use[] = { 1, 0 };
 	int coord_count = (int)sizeof(coord_use) / sizeof(coord_use[0]), value = 0;
-	int n = 0, index = 0, n0 = clamp(minimum(max_iteration / 5, max_iteration - max_iteration / 5), 1, max_iteration);
+	int n = 0, index = 0, n0 = clamp(min(max_iteration / 5, max_iteration - max_iteration / 5), 1, max_iteration);
 	for (int y = 0; y < height; y++) {
 		for (int x = 0; x < width; x++) {
 			c_real = ismandel ? x_min + x * dx : c_x;
@@ -975,8 +962,7 @@ int main() {
 	int gradient_size = sizeof(gradient) / sizeof(gradient[0]);
 	int style_size = sizeof(style) / sizeof(style[0]);
 	ImageBmp image(render_width, render_height);
-	std::vector<std::vector<char>> push_button;
-	std::vector<std::vector<char>> sequence_button;
+	std::vector<std::vector<char>> push_button, sequence_button;
 	while (1) {
 		Size resolution = get_size_screen();
 		width = resolution.width;
@@ -1022,14 +1008,13 @@ int main() {
 			}
 			array_index = 0;
 			if (is_ansi) {
-				int div = is_buddha ? 5 : 5;
 				mult_light = light * 1.3333333; // 1.3333333 | 1.15
 				for (int y = 0; y < height - 1; y++) {
 					for (int x = 0; x < width; x++) {
-						double n = prewiew[++array_index];
+						val = prewiew[++array_index];
 						if (is_mandelbulb) {
-							double col = n <= 0 ? 0 : (int)n;
-							double ot_div = n - col;
+							double col = val <= 0 ? 0 : (int)val;
+							double ot_div = val - col;
 							r = g = b = 0;
 							if (ot_div != 0.0) {
 								double bright = (1.0 - 1.5 * pow(ot_div, 1.1)) * (mult_light / 2.35853327437);
@@ -1040,10 +1025,10 @@ int main() {
 							}
 						}
 						else {
-							val = n * mult_light;
-							r = bounce(val, 0, 255, div);
-							g = bounce(val * 2.0, 0, 255, div);
-							b = bounce(val * 3.0, 0, 255, div);
+							val = val * mult_light;
+							r = bounce(val, 0, 255, 5);
+							g = bounce(val * 2.0, 0, 255, 5);
+							b = bounce(val * 3.0, 0, 255, 5);
 						}
 						row.push_back('.');
 						if (tmp_r != r || tmp_g != g || tmp_b != b) {
@@ -1067,13 +1052,12 @@ int main() {
 				print_console(row.c_str(), row.size());
 				row.clear();
 			}
-
 			if (!is_ansi) {
 				color(temp_color, Black);
 				double iteration_less = 1.0 / (double)iteration * (style_size - 1);
 				for (int y = 0; y < height - 1; y++) {
 					for (int x = 0; x < width; x++) {
-						double val = prewiew[array_index++];
+						val = prewiew[array_index++];
 						if (is_mandelbulb) {
 							double col = val <= 0 ? 0 : (int)val;
 							double ot_div = val - col;
@@ -1248,21 +1232,15 @@ int main() {
 			if (button == '0') { is_render = is_render == 0 ? 1 : 0; }
 			if (button == ' ') { repeats_button.clear(); break; }
 			if (button == '!') { is_ansi = is_ansi == 0 ? 1 : 0; clear_screen(); }
+			if (button == 'U') { type_fractal = (type_fractal + 2) % 3; is_mandel = (type_fractal == 0); }
 			if (button == 'H') {
-				rot_x = rot_z = 0.0;
-				if (type_fractal == 0) { c_x = c_y = 0.0; factor_mandelbrot = 1.5; }
-				if (type_fractal == 1) { z_x = z_y = 0.0; factor_julia = 1.5; }
-				if (type_fractal == 2) { z_x = z_y = c_x = c_y = 0.0; factor_julia = 1.5; factor_mandelbrot = 1.5; }
-			}
-			if (button == 'U') {
-				if (type_fractal == 0) { type_fractal = 2; is_mandel = 0; }
-				else if (type_fractal == 2) { type_fractal = 1; is_mandel = 0; }
-				else if (type_fractal == 1) { type_fractal = 0; is_mandel = 1; }
+				if (type_fractal == 0 || type_fractal == 2) { c_x = c_y = rot_x = rot_z = 0.0; factor_mandelbrot = 1.5; }
+				if (type_fractal == 1 || type_fractal == 2) { z_x = z_y = rot_x = rot_z = 0.0; factor_julia = 1.5; }
 			}
 			if (button == '_') {
 				if (frame > 30) {
 					std::ofstream fout("button.txt");
-					for (const auto x : push_button) {
+					for (const auto& x: push_button) {
 						for (const char ch : x) {
 							if (ch != '_') {
 								fout << ch;
