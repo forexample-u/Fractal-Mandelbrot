@@ -6,12 +6,9 @@
 
 // if you use windows 10, 11 enable use_ansi this flag, in other case (windows 8, 7... set to 0)
 // if you use linux enable this flag
-// i'm testing all code in windows 11
 #define use_ansi 1
 
 typedef struct Size { int width, height; } Size;
-typedef struct Color { int r, g, b; } Color;
-typedef struct vec2 { double x, y; } vec2;
 typedef struct vec3 { double x, y, z; } vec3;
 typedef enum ColorBit { Black, DarkBlue, DarkGreen, DarkCyan, DarkRed, DarkMagenta, DarkYellow, Gray, DarkGray, Blue, Green, Cyan, Red, Magenta, Yellow, White } ColorBit;
 
@@ -87,11 +84,8 @@ inline int bounce(int x, int min, int max, int divide_max_value) {
 	if (x >= min && x <= max) {
 		return x;
 	}
-	int more_left_right = x / max % 2;
-	if (more_left_right == 1) {
-		return max - (x / divide_max_value) % max;
-	}
-	return (x / divide_max_value) % max;
+	int offset = (x / divide_max_value) % max;
+	return (x / max % 2) ? max - offset : offset;
 }
 
 #define min(a, b) a < b ? a : b
@@ -118,8 +112,7 @@ inline void clear_screen() {
 inline Size get_size_screen() {
 	CONSOLE_SCREEN_BUFFER_INFO screen;
 	GetConsoleScreenBufferInfo(h, &screen);
-	Size size = { (screen.srWindow.Right - screen.srWindow.Left + 1), (screen.srWindow.Bottom - screen.srWindow.Top + 1) };
-	return size;
+	return Size { (screen.srWindow.Right - screen.srWindow.Left + 1), (screen.srWindow.Bottom - screen.srWindow.Top + 1) };
 }
 
 inline void color(ColorBit font, ColorBit bg) {
@@ -164,7 +157,7 @@ inline void clear_screen() {
 inline Size get_size_screen() {
 	struct winsize screen;
 	ioctl(STDOUT_FILENO, TIOCGWINSZ, &screen);
-	return Size{ screen.ws_col, screen.ws_row };
+	return Size { screen.ws_col, screen.ws_row };
 }
 
 inline int ansi_color_to_windows_color(int color_bit) {
@@ -399,7 +392,7 @@ inline void mandelbrot(double* arrays, int fractal_index, double z_x, double z_i
 						z_real = (7.0 * z_real_prev + 2.0 - (z_cos_real * z_right_real + z_cos_imag * z_right_imag)) * 0.25;
 						z_imag = (7.0 * z_imag_prev - (z_cos_real * z_right_imag - z_cos_imag * z_right_real)) * 0.25;
 					}
-					if (fractal_index == 4) { // collatz_riemann_fractal
+					if (fractal_index == 4) { // collatz_mandelbrot
 						kx = exp(z_real_prev);
 						z_cos_real = cos(z_imag_prev) * kx;
 						z_cos_imag = sin(z_imag_prev) * -kx;
@@ -408,7 +401,7 @@ inline void mandelbrot(double* arrays, int fractal_index, double z_x, double z_i
 						z_real = (7.0 * z_real_prev + 2.0 - (z_cos_real * z_right_real + z_cos_imag * z_right_imag)) * 0.25;
 						z_imag = (7.0 * z_imag_prev - (z_cos_real * z_right_imag - z_cos_imag * z_right_real)) * 0.25;
 					}
-					if (fractal_index == 5) { // collatz_conj
+					if (fractal_index == 5) { // collatz_like_mandelbrot
 						kx = exp(-z_imag_prev * PI);
 						z_cos_real = cos(z_real_prev * PI) * kx;
 						z_cos_imag = sin(z_real_prev * PI) * -kx;
@@ -752,8 +745,7 @@ inline void buddhabrot(double* arrays, int fractal_index, double z_x, double z_i
 	double real_power = power * 0.5 * mult_power;
 	double real_newton_power = (power - 1.0) * 0.5 * mult_power;
 	int is_power_two = power == 2.0 && mult_power == 1.0, is_power_one = power == 1.0 && mult_power == 1.0;
-	int nx, ny, idx, escape_newton = 0, is_escape = 0;
-	int area = width * height;
+	int nx, ny, idx, area = width * height, escape_newton = 0, is_escape = 0;
 	if (fractal_index == 6) { range = pow(range, 21.0); }
 	for (long i = 0; i < max_sample; i++) {
 		z_real2 = z_imag2 = 0.0;
@@ -812,7 +804,7 @@ inline void buddhabrot(double* arrays, int fractal_index, double z_x, double z_i
 				z_real = (7.0 * z_real_prev + 2.0 - (z_cos_real * z_right_real + z_cos_imag * z_right_imag)) * 0.25 + c_real;
 				z_imag = (7.0 * z_imag_prev - (z_cos_real * z_right_imag - z_cos_imag * z_right_real)) * 0.25 + c_imag;
 			}
-			if (fractal_index == 4) { // collatz_riemann_fractal
+			if (fractal_index == 4) { // collatz_mandelbrot
 				kx = exp(z_real_prev);
 				z_cos_real = cos(z_imag_prev) * kx;
 				z_cos_imag = sin(z_imag_prev) * -kx;
@@ -821,7 +813,7 @@ inline void buddhabrot(double* arrays, int fractal_index, double z_x, double z_i
 				z_real = (7.0 * z_real_prev + 2.0 - (z_cos_real * z_right_real + z_cos_imag * z_right_imag)) * 0.25 + c_real;
 				z_imag = (7.0 * z_imag_prev - (z_cos_real * z_right_imag - z_cos_imag * z_right_real)) * 0.25 + c_imag;
 			}
-			if (fractal_index == 5) { // collatz_conj (?)
+			if (fractal_index == 5) { // collatz_like_mandelbrot
 				kx = exp(-z_imag_prev * PI);
 				z_cos_real = cos(z_real_prev * PI) * kx;
 				z_cos_imag = sin(z_real_prev * PI) * -kx;
