@@ -22,6 +22,10 @@ Platform support:
 4d quaternion fractal:
 1. Mandelbrot Quaternion
 
+Compile to binary:
+```bash
+g++ main.cpp -O2 -march=native -ffast-math -o output
+```
 
 Hotkey:
 1. 'V' - переключение фракталов

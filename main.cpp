@@ -1124,31 +1124,26 @@ int main() {
 				if (type_fractal == 0 || type_fractal == 2) { c_x = c_y = c_z = c_w = rot_x = rot_z = 0.0; factor_mandelbrot = 1.5; }
 				if (type_fractal == 1 || type_fractal == 2) { z_x = z_y = z_z = z_w = rot_x = rot_z = 0.0; factor_julia = 1.5; }
 			}
-			if (button == '_') {
-				if (frame > 30) {
-					std::ofstream fout("button.txt");
-					for (const auto& x: push_button) {
-						for (const char ch : x) {
-							if (ch != '_') {
-								fout << ch;
-							}
+			if (button == '_' && frame > 30) {
+				std::ofstream fout("button.txt");
+				for (const auto& x: push_button) {
+					for (const char ch : x) {
+						if (ch != '_') {
+							fout << ch;
 						}
-						fout << '\n';
 					}
-					fout.close();
+					fout << '\n';
 				}
+				fout.close();
 			}
-			if (button == '~') {
-				if (frame <= 30) {
-					frame = 1;
-					std::ifstream fin("button.txt");
-					std::string line;
-					while (std::getline(fin, line)) {
-						std::vector<char> chars(line.begin(), line.end());
-						sequence_button.push_back(chars);
-					}
-					fin.close();
+			if (button == '~' && frame <= 30) {
+				frame = 1;
+				std::ifstream fin("button.txt");
+				std::string line;
+				while (std::getline(fin, line)) {
+					sequence_button.emplace_back(line.begin(), line.end());
 				}
+				fin.close();
 			}
 		}
 		if (repeats_button.size() > 0 && is_delete_button) {
