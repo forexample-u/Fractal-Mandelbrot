@@ -1180,7 +1180,7 @@ int main() {
 					if (button == ')') { phi_speed_mult *= 2.0; }
 					if (button == '&') { phi_shift += factor_mandelbrot * move_scale * phi_speed_mult; }
 					if (button == 'G') { phi_shift = 0.0; }
-					if (button == 'I') { fomula_3d = !fomula_3d; }
+					if (button == 'I') { fomula_3d = fomula_3d == 0 ? 1 : 0; }
 					if (button == '+') { z_z += factor_mandelbrot * move_scale; }
 					if (button == '*') { z_z -= factor_mandelbrot * move_scale; }
 					if (button == '@') { c_z += factor_mandelbrot * move_scale; }

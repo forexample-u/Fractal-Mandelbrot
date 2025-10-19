@@ -5,6 +5,11 @@ Platform support:
 2. Windows 8, 7 (without ansi, set use_ansi 0 on 9 line)
 3. Linux
 
+Compile to binary:
+```bash
+g++ main.cpp -O2 -march=native -ffast-math -o output
+```
+
 2d fractal:
 1. Mandelbrot
 ![](render/pic0.png)
