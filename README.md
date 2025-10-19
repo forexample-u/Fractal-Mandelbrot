@@ -5,11 +5,6 @@ Platform support:
 2. Windows 8, 7 (without ansi, set use_ansi 0 on 9 line)
 3. Linux
 
-Compile to binary:
-```bash
-g++ main.cpp -O2 -march=native -ffast-math -o output
-```
-
 2d fractal:
 1. Mandelbrot
 ![](render/pic0.png)
@@ -45,6 +40,11 @@ g++ main.cpp -O2 -march=native -ffast-math -o output
 4d bicomplex fractal:
 1. Mandelbrot Bicomplex
 ![](render/pic13.png)
+
+Compile to binary:
+```bash
+g++ main.cpp -O2 -march=native -ffast-math -o output
+```
 
 Hotkey:
 1. 'V' - переключение фракталов
