@@ -10,7 +10,6 @@
 #define use_ansi 1
 
 typedef struct Size { int width, height; } Size;
-typedef struct Color { int r, g, b; } Color;
 typedef struct vec3 { double x, y, z; } vec3;
 typedef enum ColorBit { Black, DarkBlue, DarkGreen, DarkCyan, DarkRed, DarkMagenta, DarkYellow, Gray, DarkGray, Blue, Green, Cyan, Red, Magenta, Yellow, White } ColorBit;
 
@@ -211,7 +210,7 @@ inline void clear_screen() {
 inline Size get_size_screen() {
 	struct winsize screen;
 	ioctl(STDOUT_FILENO, TIOCGWINSZ, &screen);
-	return Size{ screen.ws_col, screen.ws_row };
+	return Size { screen.ws_col, screen.ws_row };
 }
 
 inline int ansi_color_to_windows_color(int color_bit) {
@@ -614,8 +613,7 @@ inline void mandel4d(double* arrays, int fractal_index, double z_x, double z_y, 
 			double together = 0.0;
 			if (ot != 0) {
 				double ot_div = (double)ot / (double)raymarch_iterations;
-				if (ot_div >= 1.0) { ot_div -= 0.001; }
-				together = col + ot_div;
+				together = col + (ot_div >= 1.0 ? ot_div - 0.001 : ot_div);
 			}
 			arrays[index++] = together; // 13.909 | 13 - it's col value, 909 - it's ot_div value
 		}
@@ -872,11 +870,11 @@ int main() {
 							double ot_div = val - col;
 							r = g = b = 0;
 							if (ot_div != 0.0) {
-								double bright = (1.0 - 1.5 * pow(ot_div, 1.1)) * (mult_light / 2.35853327437);
+								double bright = (1.0 - 1.5 * pow(ot_div, 1.1)) * (mult_light / 2.35853327437) * 255.0;
 								vec3 color = hue(0.85, 0.45, 0.15, 1.0 + clamp(col, 3.0, 20.0) * 80.0);
-								r = clamp(color.x * bright * 255.0, 0, 255);
-								g = clamp(color.y * bright * 255.0, 0, 255);
-								b = clamp(color.z * bright * 255.0, 0, 255);
+								r = clamp(color.x * bright, 0, 255);
+								g = clamp(color.y * bright, 0, 255);
+								b = clamp(color.z * bright, 0, 255);
 							}
 						}
 						else {
@@ -917,12 +915,9 @@ int main() {
 							double col = val <= 0 ? 0 : (int)val;
 							double ot_div = val - col;
 							if (ot_div != 0.0) {
-								double bright = (1.0 - 1.5 * pow(ot_div, 1.1));
+								double bright = (1.0 - 1.5 * pow(ot_div, 1.1)) * 255.0;
 								vec3 color = hue(0.15, 0.45, 0.85, 1.0 + clamp(col, 3, 20) * 80.0);
-								r = clamp(color.x * bright * 255.0, 0, 255);
-								g = clamp(color.y * bright * 255.0, 0, 255);
-								b = clamp(color.z * bright * 255.0, 0, 255);
-								val = (r + g + b) / 3.0;
+								val = (clamp(color.x * bright, 0, 255) + clamp(color.y * bright, 0, 255) + clamp(color.z * bright, 0, 255)) / 3.0;
 							}
 						}
 						double value = bounce(val, 0, 255, 5) * 3.0;
