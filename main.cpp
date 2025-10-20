@@ -4,8 +4,7 @@
 #include <string>
 #include <fstream>
 
-// if you use windows 10, 11 enable use_ansi this flag, in other case (windows 8, 7... set to 0)
-// if you use linux enable this flag
+// if you use linux, windows 10, windows 11 enable use_ansi this flag, in other case (windows 8, 7... set to 0)
 #define use_ansi 1
 
 typedef struct Size { int width, height; } Size;
@@ -164,9 +163,7 @@ inline int ansi_color_to_windows_color(int color_bit) {
 }
 
 inline void color(ColorBit font, ColorBit bg) {
-	int font_color = ansi_color_to_windows_color(font);
-	int bg_color = ansi_color_to_windows_color(bg);
-	std::cout << "\033[38;5;" << font_color << "m\033[48;5;" << bg_color << "m";
+	std::cout << "\033[38;5;" << ansi_color_to_windows_color(font) << "m\033[48;5;" << ansi_color_to_windows_color(bg) << "m";
 }
 
 int __getch() {
@@ -234,9 +231,7 @@ public:
 		stream.open(filename, std::ofstream::binary);
 		int iter = 0;
 		int extra_bytes = 4 - ((width * 3) % 4);
-		if (extra_bytes == 4) {
-			extra_bytes = 0;
-		}
+		extra_bytes = extra_bytes == 4 ? 0 : extra_bytes;
 		unsigned int padded_size = ((width * 3) + extra_bytes) * height;
 		unsigned int one_headers[6]{ padded_size + 54, 0, 54, 40, (unsigned int)width, (unsigned int)height };
 		unsigned int two_headers[6]{ 0, padded_size, 0, 0, 0, 0 };
@@ -273,9 +268,7 @@ public:
 		std::ifstream stream(filename.c_str(), std::ifstream::binary);
 		unsigned char line_headers[54];
 		stream.read((char*)line_headers, 54);
-		width = *(int*)&line_headers[18];
-		height = *(int*)&line_headers[22];
-		crop(width, height);
+		crop(*(int*)&line_headers[18], *(int*)&line_headers[22]);
 		unsigned int offset = *(unsigned int*)&line_headers[10];
 		stream.ignore(offset - 54);
 		for (int y = height - 1; y >= 0; --y) {

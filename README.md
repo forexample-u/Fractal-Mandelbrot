@@ -2,7 +2,7 @@
 
 Platform support:
 1. Windows 10, 11
-2. Windows 8, 7 (without ansi, set use_ansi 0 on 9 line)
+2. Windows 8, 7 (without ansi, set use_ansi 0 on 8 line)
 3. Linux
 
 2d fractal:
