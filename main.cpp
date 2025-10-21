@@ -47,18 +47,17 @@ inline double fast_sin(double x) {
 	return 0.224 * x * (fabs(x) - 1.0) + x;
 }
 
-inline double fast_sqrt(double number) {
-	double x2 = number * 0.5, y = number;
+inline double fast_sqrt(double x) {
+	double x2 = x * 0.5, y = x;
 	long long i = *(long long*)&y;
 	i = 0x5fe6ec85e7de30da - (i >> 1);
 	y = *(double*)&i;
-	y = y * (1.5 - (x2 * y * y));
-	return number * y;
+	return x * y * (1.5 - (x2 * y * y));
 }
 
 inline double fast_pow(double a, double b) {
 	if (b > 0.0) {
-		if (b == 2.0) { return a * a; }
+		if (b == 2.0) return a * a;
 		if (b == 0.5) return fast_sqrt(a);
 		if (b == 1.5) return fast_sqrt(a) * a;
 		return pow(a, b);
@@ -157,13 +156,9 @@ inline Size get_size_screen() {
 	return Size { screen.ws_col, screen.ws_row };
 }
 
-inline int ansi_color_to_windows_color(int color_bit) {
-	static const int color_map[16] = { 0, 4, 2, 6, 1, 5, 3, 7, 8, 12, 10, 14, 9, 13, 11, 15 };
-	return (color_bit >= 0 && color_bit <= 15) : color_map[color_bit] : color_bit;
-}
-
 inline void color(ColorBit font, ColorBit bg) {
-	std::cout << "\033[38;5;" << ansi_color_to_windows_color(font) << "m\033[48;5;" << ansi_color_to_windows_color(bg) << "m";
+	static const int ansi_to_windows_color[16] = { 0, 4, 2, 6, 1, 5, 3, 7, 8, 12, 10, 14, 9, 13, 11, 15 };
+	std::cout << "\033[38;5;" << ansi_to_windows_color[(int)font] << "m\033[48;5;" << ansi_to_windows_color[(int)bg] << "m";
 }
 
 int __getch() {
