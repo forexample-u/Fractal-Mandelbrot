@@ -314,7 +314,7 @@ inline void mandelbrot(double* arrays, int fractal_index, double z_x, double z_i
 	int n = 0, index = 0, escape_newton = 0;
 	int is_power_two = power == 2.0 && mult_power == 1.0, is_not_power_one = !(power == 1.0 && mult_power == 1.0);
 	double log_value = power > 2 ? 1.0 / fast_log(power > 0.0 ? power : -power) : 1.44269504088896, p_y = 0.0;
-	double half_log_value = log_value * 0.5, real_power = power * 0.5 * mult_power, real_newton_power = (power - 1.0) * 0.5 * mult_power;
+	double half_log_value = log_value * 0.5, real_power = power * 0.5 * mult_power, power_minus_one = power - 1.0, real_newton_power = (power - 1.0) * 0.5 * mult_power;
 	if (fractal_index == 9) { range = pow(10, 21); }
 	if (fractal_index == 6) { range = pow(range, 21); }
 	if (fractal_index == 5) { range = pow(range, 12); }
@@ -380,20 +380,20 @@ inline void mandelbrot(double* arrays, int fractal_index, double z_x, double z_i
 					if (fractal_index == 4) { // collatz_mandelbrot
 						kx = exp(z_real_prev);
 						z_cos_real = cos(z_imag_prev) * kx;
-						z_cos_imag = sin(z_imag_prev) * -kx;
+						z_cos_imag = sin(z_imag_prev) * kx;
 						z_right_real = 5.0 * z_real_prev + 2.0;
 						z_right_imag = 5.0 * z_imag_prev;
-						z_real = (7.0 * z_real_prev + 2.0 - (z_cos_real * z_right_real + z_cos_imag * z_right_imag)) * 0.25;
-						z_imag = (7.0 * z_imag_prev - (z_cos_real * z_right_imag - z_cos_imag * z_right_real)) * 0.25;
+						z_real = (7.0 * z_real_prev + 2.0 - (z_cos_real * z_right_real - z_cos_imag * z_right_imag)) * 0.25;
+						z_imag = (7.0 * z_imag_prev - (z_cos_real * z_right_imag + z_cos_imag * z_right_real)) * 0.25;
 					}
 					if (fractal_index == 5) { // collatz_like_mandelbrot
 						kx = exp(-z_imag_prev * PI);
 						z_cos_real = cos(z_real_prev * PI) * kx;
-						z_cos_imag = sin(z_real_prev * PI) * -kx;
+						z_cos_imag = sin(z_real_prev * PI) * kx;
 						z_right_real = 5.0 * z_real_prev + 2.0;
 						z_right_imag = 5.0 * z_imag_prev;
-						z_real = (7.0 * z_real_prev + 2.0 - (z_cos_real * z_right_real + z_cos_imag * z_right_imag)) * 0.25;
-						z_imag = (7.0 * z_imag_prev - (z_cos_real * z_right_imag - z_cos_imag * z_right_real)) * 0.25;
+						z_real = (7.0 * z_real_prev + 2.0 - (z_cos_real * z_right_real - z_cos_imag * z_right_imag)) * 0.25;
+						z_imag = (7.0 * z_imag_prev - (z_cos_real * z_right_imag + z_cos_imag * z_right_real)) * 0.25;
 					}
 					if (fractal_index == 6) { // e ^ z
 						kx = exp(z_real_prev);
@@ -421,16 +421,14 @@ inline void mandelbrot(double* arrays, int fractal_index, double z_x, double z_i
 						if (is_power_two || !is_not_power_one) {
 							z_atan2 = atan2(z_imag, z_real);
 						}
-						z_imag_power = z_power * sin((power - 1.0) * z_atan2);
-						z_real_power = z_power * cos((power - 1.0) * z_atan2);
+						z_imag_power = z_power * sin(power_minus_one * z_atan2);
+						z_real_power = z_power * cos(power_minus_one * z_atan2);
 						z_temp_real = z_real;
 						z_temp_imag = z_imag;
 						z_real_prev--;
 						z_power_invert = 1.0 / (z_real_power * z_real_power + z_imag_power * z_imag_power);
-						z_real = (z_real_prev * z_real_power + z_imag_prev * z_imag_power) * z_power_invert;
-						z_imag = (z_imag_prev * z_real_power - z_real_prev * z_imag_power) * z_power_invert;
-						z_real = z_temp_real - z_real;
-						z_imag = z_temp_imag - z_imag;
+						z_real = z_real - (z_real_prev * z_real_power + z_imag_prev * z_imag_power) * z_power_invert;
+						z_imag = z_imag - (z_imag_prev * z_real_power - z_real_prev * z_imag_power) * z_power_invert;
 						z_real_minus_tmp_real_power = z_real + c_real - z_temp_real;
 						z_imag_minus_tmp_imag_power = z_imag + c_imag - z_temp_imag;
 						if (z_real_minus_tmp_real_power * z_real_minus_tmp_real_power + z_imag_minus_tmp_imag_power * z_imag_minus_tmp_imag_power < 0.002) {
@@ -723,8 +721,7 @@ inline void buddhabrot(double* arrays, int fractal_index, double z_x, double z_i
 	double z_cos_real, z_cos_imag, z_right_real, z_right_imag, PI = 3.14159265359, kx, ky, z_power_invert, z_power;
 	double z_temp_real = 0.0, z_temp_imag = 0.0, z_old_real = 0.0, z_old_imag = 0.0, z_real2 = 0.0, z_imag2 = 0.0, p_real = -0.5, p_imag = 0.0, z_real_minus_tmp_real_power = 0.0, z_imag_minus_tmp_imag_power = 0.0;
 	double rand_real, rand_imag, mult_distrub = 1.0 / (double)0xFFFFFFFF;
-	double real_power = power * 0.5 * mult_power;
-	double real_newton_power = (power - 1.0) * 0.5 * mult_power;
+	double real_power = power * 0.5 * mult_power, power_minus_one = power - 1.0, real_newton_power = (power - 1.0) * 0.5 * mult_power;
 	int is_power_two = power == 2.0 && mult_power == 1.0, is_power_one = power == 1.0 && mult_power == 1.0;
 	int nx, ny, idx, area = width * height, escape_newton = 0, is_escape = 0;
 	if (fractal_index == 6) { range = pow(range, 21.0); }
@@ -788,20 +785,20 @@ inline void buddhabrot(double* arrays, int fractal_index, double z_x, double z_i
 			if (fractal_index == 4) { // collatz_mandelbrot
 				kx = exp(z_real_prev);
 				z_cos_real = cos(z_imag_prev) * kx;
-				z_cos_imag = sin(z_imag_prev) * -kx;
+				z_cos_imag = sin(z_imag_prev) * kx;
 				z_right_real = 5.0 * z_real_prev + 2.0;
 				z_right_imag = 5.0 * z_imag_prev;
-				z_real = (7.0 * z_real_prev + 2.0 - (z_cos_real * z_right_real + z_cos_imag * z_right_imag)) * 0.25 + c_real;
-				z_imag = (7.0 * z_imag_prev - (z_cos_real * z_right_imag - z_cos_imag * z_right_real)) * 0.25 + c_imag;
+				z_real = (7.0 * z_real_prev + 2.0 - (z_cos_real * z_right_real - z_cos_imag * z_right_imag)) * 0.25 + c_real;
+				z_imag = (7.0 * z_imag_prev - (z_cos_real * z_right_imag + z_cos_imag * z_right_real)) * 0.25 + c_imag;
 			}
 			if (fractal_index == 5) { // collatz_like_mandelbrot
 				kx = exp(-z_imag_prev * PI);
 				z_cos_real = cos(z_real_prev * PI) * kx;
-				z_cos_imag = sin(z_real_prev * PI) * -kx;
+				z_cos_imag = sin(z_real_prev * PI) * kx;
 				z_right_real = 5.0 * z_real_prev + 2.0;
 				z_right_imag = 5.0 * z_imag_prev;
-				z_real = (7.0 * z_real_prev + 2.0 - (z_cos_real * z_right_real + z_cos_imag * z_right_imag)) * 0.25 + c_real;
-				z_imag = (7.0 * z_imag_prev - (z_cos_real * z_right_imag - z_cos_imag * z_right_real)) * 0.25 + c_imag;
+				z_real = (7.0 * z_real_prev + 2.0 - (z_cos_real * z_right_real - z_cos_imag * z_right_imag)) * 0.25 + c_real;
+				z_imag = (7.0 * z_imag_prev - (z_cos_real * z_right_imag + z_cos_imag * z_right_real)) * 0.25 + c_imag;
 			}
 			if (fractal_index == 6) { // e ^ z
 				kx = exp(z_real_prev);
@@ -830,8 +827,8 @@ inline void buddhabrot(double* arrays, int fractal_index, double z_x, double z_i
 				if (is_power_two || is_power_one) {
 					z_atan2 = atan2(z_imag, z_real);
 				}
-				z_imag_power = z_power * sin((power - 1.0) * z_atan2);
-				z_real_power = z_power * cos((power - 1.0) * z_atan2);
+				z_imag_power = z_power * sin(power_minus_one * z_atan2);
+				z_real_power = z_power * cos(power_minus_one * z_atan2);
 				z_temp_real = z_real;
 				z_temp_imag = z_imag;
 				z_power_invert = 1.0 / (z_real_power * z_real_power + z_imag_power * z_imag_power);
