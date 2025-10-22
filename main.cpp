@@ -470,8 +470,8 @@ inline void mandelbulb(double* arrays, int fractal_index, double z_x, double z_y
 	double cam_ro_y = (ismandel ? cy : z_y);
 	double cam_ro_z = -factor;
 	double real_power = power * mult_power, surf_dist = 0.0, z_x_tmp, z_y_tmp, z_z_tmp, z_x_2, z_y_2, z_z_2, p_x = -0.5, p_y = 0.0, p_z = 0.0;
-	int is_power_two = power == 2.0 && phi_shift == 0.0 && mult_power == 1.0;
-	int max_iterations = max_iteration / 5, index = 0;
+	double cos_rot_x = cos(rot_x), sin_rot_x = sin(rot_x), cos_rot_z = cos(rot_z), sin_rot_z = sin(rot_z), inv_raymarch_iterations = 1.0 / (double)raymarch_iterations;
+	int is_power_two = power == 2.0 && phi_shift == 0.0 && mult_power == 1.0, max_iterations = max_iteration / 5, index = 0;
 	range = range * 4.0;
 	for (int y = 0; y < height; y++) {
 		for (int x = 0; x < width; x++) {
@@ -487,13 +487,13 @@ inline void mandelbulb(double* arrays, int fractal_index, double z_x, double z_y
 				double cam_z_y = cam_ro_y + rd_y * dO;
 				double cam_z_z = cam_ro_z + rd_z * dO;
 				vec3 z = vec3{ cam_z_x, cam_z_y, cam_z_z };
-				double c = cos(rot_x);
-				double s = sin(rot_x);
+				double c = cos_rot_x;
+				double s = sin_rot_x;
 				double tmp_z = c * z.z - s * z.y;
 				z.y = c * z.y + s * z.z;
 				z.z = tmp_z;
-				c = cos(rot_z);
-				s = sin(rot_z);
+				c = cos_rot_z;
+				s = sin_rot_z;
 				tmp_z = c * z.z - s * z.x;
 				z.x = c * z.x + s * z.z;
 				z.z = tmp_z;
@@ -504,10 +504,10 @@ inline void mandelbulb(double* arrays, int fractal_index, double z_x, double z_y
 				double c_y = ismandel ? z.y : cy;
 				double c_z = ismandel ? z.z : 0.0;
 				if (inverse != 0.0) {
-					double c_pow_sum = c_x * c_x + c_y * c_y + c_z * c_z;
-					c_x = inverse * (c_x / c_pow_sum) + ((1.0 - inverse) * c_x);
-					c_y = inverse * (c_y / c_pow_sum) + ((1.0 - inverse) * c_y);
-					c_z = inverse * (c_z / c_pow_sum) + ((1.0 - inverse) * c_z);
+					double c_pow_sum = inverse * 1.0 / (c_x * c_x + c_y * c_y + c_z * c_z);
+					c_x = c_x * c_pow_sum + ((1.0 - inverse) * c_x);
+					c_y = c_y * c_pow_sum + ((1.0 - inverse) * c_y);
+					c_z = c_z * c_pow_sum + ((1.0 - inverse) * c_z);
 				}
 				double z_x = ismandel ? c_x : z.x;
 				double z_y = ismandel ? c_y : z.y;
@@ -577,7 +577,7 @@ inline void mandelbulb(double* arrays, int fractal_index, double z_x, double z_y
 			}
 			double together = 0.0;
 			if (ot != 0) {
-				double ot_div = (double)ot / (double)raymarch_iterations;
+				double ot_div = (double)ot * inv_raymarch_iterations;
 				together = col + (ot_div >= 1.0 ? ot_div - 0.001 : ot_div);
 			}
 			arrays[index++] = together; // 13.909 | 13 - it's col value, 909 - it's ot_div value
@@ -600,8 +600,8 @@ inline void mandel4d(double* arrays, int fractal_index, double z_x, double z_y, 
 	double cam_ro_y = (ismandel ? cy : z_y);
 	double cam_ro_z = -factor;
 	double real_power = power * mult_power, surf_dist = 0.0, z_x_tmp, z_y_tmp, z_z_tmp, z_x_2, z_y_2, z_z_2, p_x = -0.5, p_y = 0.0, p_z = 0.0;
-	int is_power_two = power == 2.0 && phi_shift == 0.0 && mult_power == 1.0;
-	int max_iterations = max_iteration, index = 0;
+	double cos_rot_x = cos(rot_x), sin_rot_x = sin(rot_x), cos_rot_z = cos(rot_z), sin_rot_z = sin(rot_z), inv_raymarch_iterations = 1.0 / (double)raymarch_iterations;
+	int is_power_two = power == 2.0 && phi_shift == 0.0 && mult_power == 1.0, max_iterations = max_iteration, index = 0;
 	for (int y = 0; y < height; y++) {
 		for (int x = 0; x < width; x++) {
 			double uv_x = x_min + x * dx;
@@ -616,13 +616,13 @@ inline void mandel4d(double* arrays, int fractal_index, double z_x, double z_y, 
 				double cam_z_y = cam_ro_y + rd_y * dO;
 				double cam_z_z = cam_ro_z + rd_z * dO;
 				vec3 z = vec3{ cam_z_x, cam_z_y, cam_z_z };
-				double c = cos(rot_x);
-				double s = sin(rot_x);
+				double c = cos_rot_x;
+				double s = sin_rot_x;
 				double tmp_z = c * z.z - s * z.y;
 				z.y = c * z.y + s * z.z;
 				z.z = tmp_z;
-				c = cos(rot_z);
-				s = sin(rot_z);
+				c = cos_rot_z;
+				s = sin_rot_z;
 				tmp_z = c * z.z - s * z.x;
 				z.x = c * z.x + s * z.z;
 				z.z = tmp_z;
@@ -632,13 +632,13 @@ inline void mandel4d(double* arrays, int fractal_index, double z_x, double z_y, 
 				double c_x = ismandel ? z.x : cx;
 				double c_y = ismandel ? z.y : cy;
 				double c_z = ismandel ? z.z : cz;
-				double c_w = ismandel ? zw  : cw;
+				double c_w = ismandel ? zw : cw;
 				if (inverse != 0.0) {
-					double c_pow_sum = c_x * c_x + c_y * c_y + c_z * c_z + c_w * c_w;
-					c_x = inverse * (c_x / c_pow_sum) + ((1.0 - inverse) * c_x);
-					c_y = inverse * (c_y / c_pow_sum) + ((1.0 - inverse) * c_y);
-					c_z = inverse * (c_z / c_pow_sum) + ((1.0 - inverse) * c_z);
-					c_w = inverse * (c_w / c_pow_sum) + ((1.0 - inverse) * c_w);
+					double c_pow_sum = inverse * 1.0 / (c_x * c_x + c_y * c_y + c_z * c_z + c_w * c_w);
+					c_x = c_x * c_pow_sum + ((1.0 - inverse) * c_x);
+					c_y = c_y * c_pow_sum + ((1.0 - inverse) * c_y);
+					c_z = c_z * c_pow_sum + ((1.0 - inverse) * c_z);
+					c_w = c_w * c_pow_sum + ((1.0 - inverse) * c_w);
 				}
 				double z_x = ismandel ? c_x : z.x;
 				double z_y = ismandel ? c_y : z.y;
@@ -699,7 +699,7 @@ inline void mandel4d(double* arrays, int fractal_index, double z_x, double z_y, 
 			}
 			double together = 0.0;
 			if (ot != 0) {
-				double ot_div = (double)ot / (double)raymarch_iterations;
+				double ot_div = (double)ot * inv_raymarch_iterations;
 				together = col + (ot_div >= 1.0 ? ot_div - 0.001 : ot_div);
 			}
 			arrays[index++] = together; // 13.909 | 13 - it's col value, 909 - it's ot_div value
@@ -1026,7 +1026,7 @@ int main() {
 							double ot_div = val - col;
 							r = g = b = 0;
 							if (ot_div != 0.0) {
-								double bright = (1.0 - 1.5 * pow(ot_div, 1.1)) * (mult_light / 2.35853327437) * 255.0;
+								double bright = (1.0 - 1.5 * pow(ot_div, 1.1)) * mult_light * 108.118042163;
 								vec3 color = hue(0.85, 0.45, 0.15, 1.0 + clamp(col, 3.0, 20.0) * 80.0);
 								r = clamp(color.x * bright, 0, 255);
 								g = clamp(color.y * bright, 0, 255);
@@ -1034,7 +1034,7 @@ int main() {
 							}
 						}
 						else {
-							val = val * mult_light;
+							val = floor(val * 5.0) * 0.2 * mult_light;
 							r = bounce(val, 0, 255, 5);
 							g = bounce(val * 2.0, 0, 255, 5);
 							b = bounce(val * 3.0, 0, 255, 5);
