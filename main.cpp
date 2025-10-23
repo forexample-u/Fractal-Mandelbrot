@@ -511,50 +511,50 @@ inline void mandel4d(double* arrays, int fractal_index, double z_x, double z_y, 
 				double z_z = ismandel ? c_z : z.z;
 				double z_w = ismandel ? cw : zw;
 				if (is_mandelbulb) {
-				for (int j = 1; j < max_iterations; j++) {
-					double zx2 = z_x * z_x;
-					double zy2 = z_y * z_y;
-					double zz2 = z_z * z_z;
-					double zxy2 = zx2 + zy2;
-					r = sqrt(zxy2 + zz2);
-					if (r > range) {
-						orbit = j;
-						break;
-					}
-					if (fractal_index == 2) {
-						z_x = fabs(z_x);
-						z_y = fabs(z_y);
-						z_z = -fabs(z_z);
-					}
-					if (formula == 0) {
-						if (is_power_two) {
-								dr = r * 2.0 * dr + 1.0;
-							a = 1.0 - zz2 / zxy2;
-							z_y_prev = 2.0 * z_y * z_x * a;
-							z_z_prev = 2.0 * z_z * sqrt(zxy2);
-							z_x_prev = (zx2 - zy2) * a;
+					for (int j = 1; j < max_iterations; j++) {
+						double zx2 = z_x * z_x;
+						double zy2 = z_y * z_y;
+						double zz2 = z_z * z_z;
+						double zxy2 = zx2 + zy2;
+						r = sqrt(zxy2 + zz2);
+						if (r > range) {
+							orbit = j;
+							break;
 						}
-						else {
+						if (fractal_index == 2) {
+							z_x = fabs(z_x);
+							z_y = fabs(z_y);
+							z_z = -fabs(z_z);
+						}
+						if (formula == 0) {
+							if (is_power_two) {
+									dr = r * 2.0 * dr + 1.0;
+								a = 1.0 - zz2 / zxy2;
+								z_y_prev = 2.0 * z_y * z_x * a;
+								z_z_prev = 2.0 * z_z * sqrt(zxy2);
+								z_x_prev = (zx2 - zy2) * a;
+							}
+							else {
+									dr = fast_pow(r, power - 1.0) * power * dr + 1.0;
+								zr = fast_pow(r, real_power);
+									theta = atan2(z_y, z_x) * power;
+									phi = (asin(z_z / r) + phi_shift) * power;
+									cos_phi = cos(phi);
+									z_x_prev = zr * cos(theta) * cos_phi;
+									z_y_prev = zr * sin(theta) * cos_phi;
+									z_z_prev = zr * sin(phi);
+							}
+						}
+						else if (formula == 1) {
+								zr = fast_pow(r, power);
+								theta = acos(z_z / r) * power;
+								phi = atan2(z_y, z_x) * power;
+								sin_theta = sin(theta);
+								z_x_prev = zr * cos(phi) * sin_theta;
+								z_y_prev = zr * sin(phi) * sin_theta;
+								z_z_prev = zr * cos(theta);
 								dr = fast_pow(r, power - 1.0) * power * dr + 1.0;
-							zr = fast_pow(r, real_power);
-								theta = atan2(z_y, z_x) * power;
-								phi = (asin(z_z / r) + phi_shift) * power;
-								cos_phi = cos(phi);
-								z_x_prev = zr * cos(theta) * cos_phi;
-								z_y_prev = zr * sin(theta) * cos_phi;
-								z_z_prev = zr * sin(phi);
 						}
-					}
-					else if (formula == 1) {
-							zr = fast_pow(r, power);
-							theta = acos(z_z / r) * power;
-							phi = atan2(z_y, z_x) * power;
-							sin_theta = sin(theta);
-							z_x_prev = zr * cos(phi) * sin_theta;
-							z_y_prev = zr * sin(phi) * sin_theta;
-							z_z_prev = zr * cos(theta);
-							dr = fast_pow(r, power - 1.0) * power * dr + 1.0;
-					}
 						else if (formula == 2) { // try e ^ z
 							zr = exp(z_x);
 							theta = atan2(z_y, z_x) * zr;
@@ -565,68 +565,68 @@ inline void mandel4d(double* arrays, int fractal_index, double z_x, double z_y, 
 							z_z_prev = zr * cos(phi);
 							dr = zr * dr + 1.0;
 						}
-					if (fractal_index < 3) {
-						if (fractal_index == 1) { // tricorn
-							z_y_prev = -z_y_prev;
-							z_z_prev = z_z_prev; // minus
+						if (fractal_index < 3) {
+							if (fractal_index == 1) { // tricorn
+								z_y_prev = -z_y_prev;
+								z_z_prev = z_z_prev; // minus
+							}
+							z_x = z_x_prev;
+							z_y = z_y_prev;
+							z_z = z_z_prev;
 						}
-						z_x = z_x_prev;
-						z_y = z_y_prev;
-						z_z = z_z_prev;
+						z_x = z_x + c_x;
+						z_y = z_y + c_y;
+						z_z = z_z + c_z;
 					}
-					z_x = z_x + c_x;
-					z_y = z_y + c_y;
-					z_z = z_z + c_z;
 				}
-			}
 				else {
 					for (int j = 1; j < max_iterations; j++) {
-					double zx2 = z_x * z_x;
-					double zy2 = z_y * z_y;
-					double zz2 = z_z * z_z;
-					double zw2 = z_w * z_w;
-					r = sqrt(zx2 + zy2 + zz2 + zw2);
-					if (r > range) {
-						orbit = j;
-						break;
-					}
-					if (fractal_index == 2) {
-						z_x = fabs(z_x);
-						z_y = fabs(z_y);
-						z_z = fabs(z_z);
-						z_w = fabs(z_w);
-					}
-					if (is_power_two) {
-						dr = fast_pow(r, power - 1.0) * dr * power + 1.0;
-						if (formula == 0) { // quaternion
-							z_x_prev = zx2 - zy2 - zz2 - zw2;
-							z_y_prev = 2.0 * z_x * z_y;
-							z_z_prev = 2.0 * z_x * z_z;
-							z_w_prev = 2.0 * z_x * z_w;
+						double zx2 = z_x * z_x;
+						double zy2 = z_y * z_y;
+						double zz2 = z_z * z_z;
+						double zw2 = z_w * z_w;
+						r = sqrt(zx2 + zy2 + zz2 + zw2);
+						if (r > range) {
+							orbit = j;
+							break;
 						}
-						if (formula == 1) { // bicomplex
-							z_x_prev = zx2 - zy2 - zz2 + zw2;
-							z_y_prev = 2.0 * (z_x * z_y - z_z * z_w);
-							z_z_prev = 2.0 * (z_x * z_z - z_y * z_w);
-							z_w_prev = 2.0 * (z_x * z_w + z_y * z_z);
+						if (fractal_index == 2) {
+							z_x = fabs(z_x);
+							z_y = fabs(z_y);
+							z_z = fabs(z_z);
+							z_w = fabs(z_w);
 						}
-					}
-					if (fractal_index < 3) {
-						if (fractal_index == 1) {
-							z_y_prev = -z_y_prev;
-							z_z_prev = -z_z_prev;
-							z_w_prev = -z_w_prev;
+						if (is_power_two) {
+							dr = fast_pow(r, power - 1.0) * dr * power + 1.0;
+							if (formula == 0) { // quaternion
+								z_x_prev = zx2 - zy2 - zz2 - zw2;
+								z_y_prev = 2.0 * z_x * z_y;
+								z_z_prev = 2.0 * z_x * z_z;
+								z_w_prev = 2.0 * z_x * z_w;
+							}
+							if (formula == 1) { // bicomplex
+								z_x_prev = zx2 - zy2 - zz2 + zw2;
+								z_y_prev = 2.0 * (z_x * z_y - z_z * z_w);
+								z_z_prev = 2.0 * (z_x * z_z - z_y * z_w);
+								z_w_prev = 2.0 * (z_x * z_w + z_y * z_z);
+							}
 						}
-						z_x = z_x_prev;
-						z_y = z_y_prev;
-						z_z = z_z_prev;
-						z_w = z_w_prev;
+						if (fractal_index < 3) {
+							if (fractal_index == 1) {
+								z_y_prev = -z_y_prev;
+								z_z_prev = -z_z_prev;
+								z_w_prev = -z_w_prev;
+							}
+							z_x = z_x_prev;
+							z_y = z_y_prev;
+							z_z = z_z_prev;
+							z_w = z_w_prev;
+						}
+						z_x = z_x + c_x;
+						z_y = z_y + c_y;
+						z_z = z_z + c_z;
+						z_w = z_w + c_w;
 					}
-					z_x = z_x + c_x;
-					z_y = z_y + c_y;
-					z_z = z_z + c_z;
-					z_w = z_w + c_w;
-				}
 				}
 				dist = 0.5 * log(r) * r / dr;
 				dO += dist;
