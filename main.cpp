@@ -872,17 +872,6 @@ inline vec3 hue(double inp_x, double inp_y, double inp_z, double H) {
 	return ret;
 }
 
-inline vec3 fast_hue(double inp_x, double inp_y, double inp_z, double H) {
-	H = fmod(H, 6.0); if (H < 0.0) { H += 6.0; }
-	int sector = (int)H;
-	if (sector == 0) return vec3 { inp_z, 5.0 * inp_z * (1.0 - inp_y * (1.0 - (H - sector))), 5.0 * inp_z * (1.0 - inp_y) };
-	else if (sector == 1) return vec3 { 5.0 * inp_z * (1.0 - inp_y * (H - sector)), inp_z, 5.0 * inp_z * (1.0 - inp_y) };
-	else if (sector == 2) return vec3 { 5.0 * inp_z * (1.0 - inp_y), inp_z, 5.0 * inp_z * (1.0 - inp_y * (1.0 - (H - sector))) };
-	else if (sector == 3) return vec3 { 5.0 * inp_z * (1.0 - inp_y), 5.0 * inp_z * (1.0 - inp_y * (H - sector)), inp_z };
-	else if (sector == 4) return vec3 { 5.0 * inp_z * (1.0 - inp_y * (1.0 - (H - sector))), 5.0 * inp_z * (1.0 - inp_y), inp_z };
-	return vec3 { inp_z, 5.0 * inp_z * (1.0 - inp_y), 5.0 * inp_z * (1.0 - inp_y * (H - sector)) };
-}
-
 int main() {
 	double z_x = 0.0, z_y = 0.0, z_z = 0.0, z_w = 0.0, c_x = 0.0, c_y = 0.0, c_z = 0.0, c_w = 0.0;
 	double power = 2.0, range = 8.0, inverse = 0, mult_power = 1.0, scale_mult_power = 1.0, scale_inverse = 1.0, scale_power = 1.0;
