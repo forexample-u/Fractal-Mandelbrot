@@ -83,6 +83,7 @@ inline int bounce(int x, int min, int max, int divide_max_value) {
 	return (x / max % 2) ? max - offset : offset;
 }
 
+#define min(a, b) a < b ? a : b
 #define atan2 fast_atan2
 #define cos fast_cos
 #define sin fast_sin
@@ -929,15 +930,14 @@ int main() {
 						for (int x = 0; x < width / 2; x++) {
 							prewiew[index++] = prewiew_mandelbrot[x + y * half_width];
 						}
-						if (width % 2 == 1) { prewiew[index++] = 0.0; }
 					}
 					if (type_fractal == 3) {
 						for (int x = 0; x < width / 2; x++) {
 							prewiew[index++] = prewiew_julia[x + y * half_width];
 							prewiew[index++] = prewiew_mandelbrot[x + y * half_width];
 						}
-						if (width % 2 == 1) { prewiew[index++] = 0.0; }
 					}
+					if (width % 2 == 1) { prewiew[index++] = 0.0; }
 				}
 			}
 			array_index = 0;
@@ -1179,7 +1179,7 @@ int main() {
 			}
 			if (button == '_' && frame > 30) {
 				std::ofstream fout("button.txt");
-				for (const auto& x: push_button) {
+				for (const auto& x : push_button) {
 					for (const char ch : x) {
 						if (ch != '_') {
 							fout << ch;
