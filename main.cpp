@@ -96,8 +96,7 @@ HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
 DWORD written = 0;
 
 inline void gotoxy(short x, short y) {
-	COORD pos = { x, y };
-	SetConsoleCursorPosition(h, pos);
+	SetConsoleCursorPosition(h, COORD { x, y });
 }
 
 inline void clear_screen() {
@@ -223,15 +222,13 @@ public:
 
 	inline void save_as(const std::string& filename) {
 		stream.open(filename, std::ofstream::binary);
-		int iter = 0;
+		int iter = 2;
 		int extra_bytes = 4 - ((width * 3) % 4);
 		extra_bytes = extra_bytes == 4 ? 0 : extra_bytes;
 		unsigned int padded_size = ((width * 3) + extra_bytes) * height;
-		unsigned int one_headers[6]{ padded_size + 54, 0, 54, 40, (unsigned int)width, (unsigned int)height };
-		unsigned int two_headers[6]{ 0, padded_size, 0, 0, 0, 0 };
-		std::vector<unsigned char> line_headers(54);
-		line_headers[iter++] = 'B';
-		line_headers[iter++] = 'M';
+		unsigned int one_headers[6] { padded_size + 54, 0, 54, 40, (unsigned int)width, (unsigned int)height };
+		unsigned int two_headers[6] { 0, padded_size, 0, 0, 0, 0 };
+		unsigned char line_headers[54] { 'B', 'M' };
 		for (int i = 0; i < 6; ++i) {
 			line_headers[iter++] = (unsigned char)((one_headers[i] & 0x000000ff));
 			line_headers[iter++] = (unsigned char)((one_headers[i] & 0x0000ff00) >> 8);
@@ -248,7 +245,7 @@ public:
 			line_headers[iter++] = (unsigned char)((two_headers[i] & 0x00ff0000) >> 16);
 			line_headers[iter++] = (unsigned char)((two_headers[i] & (unsigned int)0xff000000) >> 24);
 		}
-		stream.write(reinterpret_cast<const char*>(line_headers.data()), line_headers.size());
+		stream.write(reinterpret_cast<const char*>(line_headers), 54);
 		if (!bmp[0].empty()) {
 			std::streamsize stream_size = bmp[0].size();
 			for (int y = height - 1; y >= 0; --y) {
@@ -310,7 +307,7 @@ inline void mandelbrot(double* arrays, int fractal_index, double z_x, double z_i
 	double c_real, c_imag, z_real, z_imag, z_power, z_real_power = 0.0, z_imag_power = 0.0, z_power_sum = 0.0, z_atan2, power_sum_invert, z_imag_prev = 0.0, z_real_prev = 0.0;
 	double z_cos_real, z_cos_imag, z_right_real, z_right_imag, PI = 3.14159265359, kx, ky, z_power_invert, smooth_value = 0.0, nu = 0.0;
 	double z_temp_real = 0.0, z_temp_imag = 0.0, z_real2 = 0.0, z_imag2 = 0.0, p_real = -0.5, p_imag = 0.0, z_real_minus_tmp_real_power = 0.0, z_imag_minus_tmp_imag_power = 0.0;
-	double log_value = power > 2 ? 1.0 / fast_log(power > 0.0 ? power : -power) : 1.44269504088896, p_y = 0.0;
+	double log_value = power > 2 ? 1.0 / fast_log(fabs(power)) : 1.44269504088896, p_y = 0.0;
 	double half_log_value = log_value * 0.5, real_power = power * 0.5 * mult_power, power_minus_one = power - 1.0, real_newton_power = (power - 1.0) * 0.5 * mult_power;
 	int n = 0, index = 0, is_power_two = power == 2.0 && mult_power == 1.0, is_not_power_one = !(power == 1.0 && mult_power == 1.0);
 	if (fractal_index == 9) { range = pow(10, 21); }
@@ -358,7 +355,7 @@ inline void mandelbrot(double* arrays, int fractal_index, double z_x, double z_i
 					z_real_prev = z_real;
 				}
 				if (fractal_index < 3) { // mandelbrot
-					if (fractal_index == 1) { // tricorn
+					if (fractal_index == 1) {
 						z_imag_prev = -z_imag_prev;
 					}
 					z_real = z_real_prev;
@@ -416,9 +413,7 @@ inline void mandelbrot(double* arrays, int fractal_index, double z_x, double z_i
 					}
 					if (fractal_index == 9) { // newton
 						z_power = power * fast_pow(z_power_sum, real_newton_power);
-						if (is_power_two || !is_not_power_one) {
-							z_atan2 = atan2(z_imag, z_real);
-						}
+						if (is_power_two || !is_not_power_one) { z_atan2 = atan2(z_imag, z_real); }
 						z_imag_power = z_power * sin(power_minus_one * z_atan2);
 						z_real_power = z_power * cos(power_minus_one * z_atan2);
 						z_temp_real = z_real;
@@ -474,22 +469,21 @@ inline void mandel4d(double* arrays, int fractal_index, double z_x, double z_y, 
 			double rd_z = 1.0 / sqrt(uv_x * uv_x + uv_y * uv_y + 1.0);
 			double rd_y = uv_y * rd_z;
 			double rd_x = uv_x * rd_z;
-			double col = 0.0, dO = 0.0;
+			double col = 0.0, dO = 0.0, together_color = 0.0;
 			int ot = raymarch_iterations - 1;
 			for (int i = 0; i < raymarch_iterations; i++) {
 				double cam_z_x = cam_ro_x + rd_x * dO;
 				double cam_z_y = cam_ro_y + rd_y * dO;
 				double cam_z_z = cam_ro_z + rd_z * dO;
 				double new_z_z = cos_rot_x * cam_z_z - sin_rot_x * cam_z_y;
-				vec3 z = vec3 { cam_z_x, cam_z_y, cam_z_z };
-				z.y = cos_rot_x * cam_z_y + sin_rot_x * cam_z_z;
-				z.x = cos_rot_z * cam_z_x + sin_rot_z * new_z_z;
-				z.z = cos_rot_z * new_z_z - sin_rot_z * cam_z_x;
+				double cam_x = cam_z_x * cos_rot_z + sin_rot_z * new_z_z;
+				double cam_y = cam_z_y * cos_rot_x + sin_rot_x * cam_z_z;
+				double cam_z = new_z_z * cos_rot_z - sin_rot_z * cam_z_x;
 				double dr = 1.0, a = 0.0, r = 0.0, sin_theta = 0.0, zr, phi, theta, cos_phi, sin_phi, dist = 0.0;
 				double z_x_prev = 0.0, z_y_prev = 0.0, z_z_prev = 0.0, z_w_prev = 0.0;
-				double c_x = ismandel ? z.x : cx;
-				double c_y = ismandel ? z.y : cy;
-				double c_z = ismandel ? z.z : cz;
+				double c_x = ismandel ? cam_x : cx;
+				double c_y = ismandel ? cam_y : cy;
+				double c_z = ismandel ? cam_z : cz;
 				double c_w = ismandel ? zw : cw;
 				if (inverse != 0.0) {
 					double c_pow_sum = inverse * 1.0 / (c_x * c_x + c_y * c_y + c_z * c_z + c_w * c_w);
@@ -498,9 +492,9 @@ inline void mandel4d(double* arrays, int fractal_index, double z_x, double z_y, 
 					c_z = c_z * c_pow_sum + (1.0 - inverse) * c_z;
 					c_w = c_w * c_pow_sum + (1.0 - inverse) * c_w;
 				}
-				double z_x = ismandel ? c_x : z.x;
-				double z_y = ismandel ? c_y : z.y;
-				double z_z = ismandel ? c_z : z.z;
+				double z_x = ismandel ? c_x : cam_x;
+				double z_y = ismandel ? c_y : cam_y;
+				double z_z = ismandel ? c_z : cam_z;
 				double z_w = ismandel ? cw : zw;
 				int n = 1;
 				if (is_mandelbulb) {
@@ -625,12 +619,11 @@ inline void mandel4d(double* arrays, int fractal_index, double z_x, double z_y, 
 				if (dist < surf_dist) { ot = i; col = (double)n; break; }
 				if (dO > 100.0) { ot = 0; col = 0; break; }
 			}
-			double together = 0.0;
 			if (ot != 0) {
 				double ot_div = (double)ot * inv_raymarch_iterations;
-				together = col + (ot_div >= 1.0 ? ot_div - 0.001 : ot_div);
+				together_color = col + (ot_div >= 1.0 ? ot_div - 0.001 : ot_div);
 			}
-			arrays[index++] = together; // 13.909 | 13 - it's col value, 909 - it's ot_div value
+			arrays[index++] = together_color; // 13.909 | 13 - it's col value, 909 - it's ot_div value
 		}
 	}
 }
@@ -754,9 +747,7 @@ inline void buddhabrot(double* arrays, int fractal_index, double z_x, double z_i
 			if (fractal_index == 9) { // newton
 				z_real_prev--;
 				z_power = power * fast_pow(z_power_sum, real_newton_power);
-				if (is_power_two || is_power_one) {
-					z_atan2 = atan2(z_imag, z_real);
-				}
+				if (is_power_two || is_power_one) { z_atan2 = atan2(z_imag, z_real); }
 				z_imag_power = z_power * sin(power_minus_one * z_atan2);
 				z_real_power = z_power * cos(power_minus_one * z_atan2);
 				z_temp_real = z_real;
@@ -766,7 +757,7 @@ inline void buddhabrot(double* arrays, int fractal_index, double z_x, double z_i
 				z_imag = (z_imag - (z_real_power * z_imag_prev - z_imag_power * z_real_prev) * z_power_invert + c_imag);
 				z_real_minus_tmp_real_power = z_real - z_temp_real;
 				z_imag_minus_tmp_imag_power = z_imag - z_temp_imag;
-				escape_newton = z_real_minus_tmp_real_power * z_real_minus_tmp_real_power + z_imag_minus_tmp_imag_power * z_imag_minus_tmp_imag_power < 0.00275 && fractal_index == 9;
+				escape_newton = z_real_minus_tmp_real_power * z_real_minus_tmp_real_power + z_imag_minus_tmp_imag_power * z_imag_minus_tmp_imag_power < 0.00275;
 			}
 			if (is_escape) {
 				if (z_power_sum > range && fractal_index != 9 || escape_newton) {
@@ -817,12 +808,11 @@ inline void lyapunov(double* arrays, double z_x, double z_i, double c_x, double 
 			}
 			z_real = ismandel ? c_real : x_min + x * dx;
 			z_imag = -(ismandel ? c_imag : y_min + y * dy); // - minus
-			lambda = ri = 0.0;
-			xn = 0.5;
+			lambda = 0.0; ri = 0.0; xn = 0.5;
 			for (int n = 1; n < max_iteration; n++) {
 				switch (coord_use[n % coord_count]) {
-				case 0: r = z_real; ri = c_imag; break;
-				case 1: r = z_imag; ri = c_real; break;
+					case 0: r = z_real; ri = c_imag; break;
+					case 1: r = z_imag; ri = c_real; break;
 				}
 				xn = xn * r * (1.0 - xn);
 				if (n >= n0) {
@@ -877,13 +867,14 @@ int main() {
 	double z_x = 0.0, z_y = 0.0, z_z = 0.0, z_w = 0.0, c_x = 0.0, c_y = 0.0, c_z = 0.0, c_w = 0.0;
 	double power = 2.0, range = 8.0, inverse = 0, mult_power = 1.0, scale_mult_power = 1.0, scale_inverse = 1.0, scale_power = 1.0;
 	double factor_mandelbrot = 1.5, factor_julia = 1.5;
-	double mult_sample = 8.0, mult_light = 0.0, light = 1.0 * 1.33 * 1.33, val = 0.0;
+	double mult_sample = 8.0, mult_light = 0.0, light = 1.7689, val = 0.0, render_light_mult = 1.5;
 	double rot_x = 0.0, rot_z = 0.0, move_scale = 0.05, min_dist = 0.001, phi_shift = 0.0, phi_speed_mult = 1.0; // 3d
 	int raymarch_iterations = 120, fomula_3d = 0, is_mandel4d = 0; // 3d/4d
-	int width = 0, height = 0, old_width = 0, old_height = 0, render_width = 1920, render_height = 1080;
+	int render_width = 1920, render_height = 1080, render_iteration_mult = 1, render_sample = 5000000;
 	int is_mandel = 1, is_buddha = 0, is_render = 0, is_ansi = use_ansi, is_delete_button = 0, is_mandelbulb = 0;
 	int frame = 0, iteration = 100, type_fractal = 0, fractal_count = 11, fractal_index = 0, array_index = 0;
 	int r = -2, g = -2, b = -2, tmp_r = -1, tmp_g = -1, tmp_b = -1;
+	int width = 0, height = 0, old_width = 0, old_height = 0;
 	char key = '\b';
 	double* prewiew = (double*)malloc(sizeof(double));
 	double* prewiew_mandelbrot = (double*)malloc(sizeof(double));
@@ -927,12 +918,12 @@ int main() {
 						for (int x = 0; x < half_width; x++) {
 							prewiew[index++] = prewiew_julia[x + y * half_width];
 						}
-						for (int x = 0; x < width / 2; x++) {
+						for (int x = 0; x < half_width; x++) {
 							prewiew[index++] = prewiew_mandelbrot[x + y * half_width];
 						}
 					}
 					if (type_fractal == 3) {
-						for (int x = 0; x < width / 2; x++) {
+						for (int x = 0; x < half_width; x++) {
 							prewiew[index++] = prewiew_julia[x + y * half_width];
 							prewiew[index++] = prewiew_mandelbrot[x + y * half_width];
 						}
@@ -942,7 +933,7 @@ int main() {
 			}
 			array_index = 0;
 			if (is_ansi) {
-				mult_light = light * 1.3333333; // 1.3333333 | 1.15
+				mult_light = light * 1.3333333;
 				for (int y = 0; y < height - 1; y++) {
 					for (int x = 0; x < width; x++) {
 						val = prewiew[++array_index];
@@ -1019,10 +1010,7 @@ int main() {
 			gotoxy(0, 0);
 			if (is_render) {
 				array_index = 0;
-				long render_sample = 5000000; // 5000000
-				double render_light_mult = 1.5; // 1
-				int iteration_mult = 1; // 12
-				get_fractal(render, fractal_index, is_buddha + is_mandelbulb * 2 + is_mandel4d * 3, z_x, z_y, c_x, c_y, is_mandel ? factor_mandelbrot : factor_julia, power, range, inverse, mult_power, is_mandel, render_width, render_height, iteration >= 50 ? iteration * iteration_mult : iteration, mult_sample * render_sample, min_dist, rot_x, rot_z, raymarch_iterations, phi_shift, fomula_3d, c_z, c_w, z_z, z_w);
+				get_fractal(render, fractal_index, is_buddha + is_mandelbulb * 2 + is_mandel4d * 3, z_x, z_y, c_x, c_y, is_mandel ? factor_mandelbrot : factor_julia, power, range, inverse, mult_power, is_mandel, render_width, render_height, iteration >= 50 ? iteration * render_iteration_mult : iteration, mult_sample * render_sample, min_dist, rot_x, rot_z, raymarch_iterations, phi_shift, fomula_3d, c_z, c_w, z_z, z_w);
 				mult_light = light * render_light_mult * (is_buddha ? 0.125 : 1.5);
 				for (int y = 0; y < render_height; y++) {
 					for (int x = 0; x < render_width; x++) {
