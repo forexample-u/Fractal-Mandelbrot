@@ -83,7 +83,6 @@ inline int bounce(int x, int min, int max, int divide_max_value) {
 	return (x / max % 2) ? max - offset : offset;
 }
 
-#define min(a, b) a < b ? a : b
 #define atan2 fast_atan2
 #define cos fast_cos
 #define sin fast_sin
@@ -96,7 +95,8 @@ HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
 DWORD written = 0;
 
 inline void gotoxy(short x, short y) {
-	SetConsoleCursorPosition(h, (COORD) { x, y });
+	COORD pos = { x, y };
+	SetConsoleCursorPosition(h, pos);
 }
 
 inline void clear_screen() {
@@ -309,10 +309,9 @@ inline void mandelbrot(double* arrays, int fractal_index, double z_x, double z_i
 	double c_real, c_imag, z_real, z_imag, z_power, z_real_power = 0.0, z_imag_power = 0.0, z_power_sum = 0.0, z_atan2, power_sum_invert, z_imag_prev = 0.0, z_real_prev = 0.0;
 	double z_cos_real, z_cos_imag, z_right_real, z_right_imag, PI = 3.14159265359, kx, ky, z_power_invert, smooth_value = 0.0, nu = 0.0;
 	double z_temp_real = 0.0, z_temp_imag = 0.0, z_real2 = 0.0, z_imag2 = 0.0, p_real = -0.5, p_imag = 0.0, z_real_minus_tmp_real_power = 0.0, z_imag_minus_tmp_imag_power = 0.0;
-	int n = 0, index = 0, escape_newton = 0;
-	int is_power_two = power == 2.0 && mult_power == 1.0, is_not_power_one = !(power == 1.0 && mult_power == 1.0);
 	double log_value = power > 2 ? 1.0 / fast_log(power > 0.0 ? power : -power) : 1.44269504088896, p_y = 0.0;
 	double half_log_value = log_value * 0.5, real_power = power * 0.5 * mult_power, power_minus_one = power - 1.0, real_newton_power = (power - 1.0) * 0.5 * mult_power;
+	int n = 0, index = 0, is_power_two = power == 2.0 && mult_power == 1.0, is_not_power_one = !(power == 1.0 && mult_power == 1.0);
 	if (fractal_index == 9) { range = pow(10, 21); }
 	if (fractal_index == 6) { range = pow(range, 21); }
 	if (fractal_index == 5) { range = pow(range, 12); }
@@ -452,9 +451,8 @@ inline void mandelbrot(double* arrays, int fractal_index, double z_x, double z_i
 }
 
 inline void mandel4d(double* arrays, int fractal_index, double z_x, double z_y, double cx, double cy, double factor, double power, double range, double inverse, double mult_power, int ismandel, int width, int height, int max_iteration, long max_sample, double min_dist, double rot_x, double rot_z, int raymarch_iterations, double phi_shift, int formula, double cz, double cw, double zz, double zw, int is_mandelbulb) {
-	double x_set = ismandel ? cx : z_x;
-	double i_set = ismandel ? cy : z_y;
-	x_set = i_set = 0;
+	double x_set = (ismandel ? cx : z_x) * 0;
+	double i_set = (ismandel ? cy : z_y) * 0;
 	double factor_one = 1.0;
 	double x_min = x_set - 1.5 * factor_one;
 	double x_max = x_set + 1.5 * factor_one;
@@ -462,8 +460,8 @@ inline void mandel4d(double* arrays, int fractal_index, double z_x, double z_y, 
 	double y_max = i_set + factor_one;
 	double dx = (x_max - x_min) / (width - 1);
 	double dy = (y_max - y_min) / (height - 1);
-	double cam_ro_x = (ismandel ? cx : z_x);
-	double cam_ro_y = (ismandel ? cy : z_y);
+	double cam_ro_x = ismandel ? cx : z_x;
+	double cam_ro_y = ismandel ? cy : z_y;
 	double cam_ro_z = -factor;
 	double real_power = power * mult_power, surf_dist = 0.0, z_x_tmp, z_y_tmp, z_z_tmp, z_x_2, z_y_2, z_z_2, p_x = -0.5, p_y = 0.0, p_z = 0.0;
 	double cos_rot_x = cos(rot_x), sin_rot_x = sin(rot_x), cos_rot_z = cos(rot_z), sin_rot_z = sin(rot_z), inv_raymarch_iterations = 1.0 / (double)raymarch_iterations;
@@ -481,44 +479,37 @@ inline void mandel4d(double* arrays, int fractal_index, double z_x, double z_y, 
 				double cam_z_x = cam_ro_x + rd_x * dO;
 				double cam_z_y = cam_ro_y + rd_y * dO;
 				double cam_z_z = cam_ro_z + rd_z * dO;
+				double new_z_z = cos_rot_x * cam_z_z - sin_rot_x * cam_z_y;
 				vec3 z = vec3 { cam_z_x, cam_z_y, cam_z_z };
-				double c = cos_rot_x;
-				double s = sin_rot_x;
-				double tmp_z = c * z.z - s * z.y;
-				z.y = c * z.y + s * z.z;
-				z.z = tmp_z;
-				c = cos_rot_z;
-				s = sin_rot_z;
-				tmp_z = c * z.z - s * z.x;
-				z.x = c * z.x + s * z.z;
-				z.z = tmp_z;
+				z.y = cos_rot_x * cam_z_y + sin_rot_x * cam_z_z;
+				z.x = cos_rot_z * cam_z_x + sin_rot_z * new_z_z;
+				z.z = cos_rot_z * new_z_z - sin_rot_z * cam_z_x;
 				double dr = 1.0, a = 0.0, r = 0.0, sin_theta = 0.0, zr, phi, theta, cos_phi, sin_phi, dist = 0.0;
 				double z_x_prev = 0.0, z_y_prev = 0.0, z_z_prev = 0.0, z_w_prev = 0.0;
-				int orbit = 0;
 				double c_x = ismandel ? z.x : cx;
 				double c_y = ismandel ? z.y : cy;
 				double c_z = ismandel ? z.z : cz;
 				double c_w = ismandel ? zw : cw;
 				if (inverse != 0.0) {
 					double c_pow_sum = inverse * 1.0 / (c_x * c_x + c_y * c_y + c_z * c_z + c_w * c_w);
-					c_x = c_x * c_pow_sum + ((1.0 - inverse) * c_x);
-					c_y = c_y * c_pow_sum + ((1.0 - inverse) * c_y);
-					c_z = c_z * c_pow_sum + ((1.0 - inverse) * c_z);
-					c_w = c_w * c_pow_sum + ((1.0 - inverse) * c_w);
+					c_x = c_x * c_pow_sum + (1.0 - inverse) * c_x;
+					c_y = c_y * c_pow_sum + (1.0 - inverse) * c_y;
+					c_z = c_z * c_pow_sum + (1.0 - inverse) * c_z;
+					c_w = c_w * c_pow_sum + (1.0 - inverse) * c_w;
 				}
 				double z_x = ismandel ? c_x : z.x;
 				double z_y = ismandel ? c_y : z.y;
 				double z_z = ismandel ? c_z : z.z;
 				double z_w = ismandel ? cw : zw;
+				int n = 1;
 				if (is_mandelbulb) {
-					for (int j = 1; j < max_iterations; j++) {
+					for (n = 1; n < max_iterations; n++) {
 						double zx2 = z_x * z_x;
 						double zy2 = z_y * z_y;
 						double zz2 = z_z * z_z;
 						double zxy2 = zx2 + zy2;
 						r = sqrt(zxy2 + zz2);
 						if (r > range) {
-							orbit = j;
 							break;
 						}
 						if (fractal_index == 2) {
@@ -528,32 +519,32 @@ inline void mandel4d(double* arrays, int fractal_index, double z_x, double z_y, 
 						}
 						if (formula == 0) {
 							if (is_power_two) {
-									dr = r * 2.0 * dr + 1.0;
 								a = 1.0 - zz2 / zxy2;
 								z_y_prev = 2.0 * z_y * z_x * a;
 								z_z_prev = 2.0 * z_z * sqrt(zxy2);
 								z_x_prev = (zx2 - zy2) * a;
+								dr = r * 2.0 * dr + 1.0;
 							}
 							else {
-									dr = fast_pow(r, power - 1.0) * power * dr + 1.0;
 								zr = fast_pow(r, real_power);
-									theta = atan2(z_y, z_x) * power;
-									phi = (asin(z_z / r) + phi_shift) * power;
-									cos_phi = cos(phi);
-									z_x_prev = zr * cos(theta) * cos_phi;
-									z_y_prev = zr * sin(theta) * cos_phi;
-									z_z_prev = zr * sin(phi);
+								theta = atan2(z_y, z_x) * power;
+								phi = (asin(z_z / r) + phi_shift) * power;
+								cos_phi = cos(phi);
+								z_x_prev = zr * cos(theta) * cos_phi;
+								z_y_prev = zr * sin(theta) * cos_phi;
+								z_z_prev = zr * sin(phi);
+								dr = fast_pow(r, power - 1.0) * power * dr + 1.0;
 							}
 						}
 						else if (formula == 1) {
-								zr = fast_pow(r, power);
-								theta = acos(z_z / r) * power;
-								phi = atan2(z_y, z_x) * power;
-								sin_theta = sin(theta);
-								z_x_prev = zr * cos(phi) * sin_theta;
-								z_y_prev = zr * sin(phi) * sin_theta;
-								z_z_prev = zr * cos(theta);
-								dr = fast_pow(r, power - 1.0) * power * dr + 1.0;
+							zr = fast_pow(r, power);
+							theta = acos(z_z / r) * power;
+							phi = atan2(z_y, z_x) * power;
+							sin_theta = sin(theta);
+							z_x_prev = zr * cos(phi) * sin_theta;
+							z_y_prev = zr * sin(phi) * sin_theta;
+							z_z_prev = zr * cos(theta);
+							dr = fast_pow(r, power - 1.0) * power * dr + 1.0;
 						}
 						else if (formula == 2) { // try e ^ z
 							zr = exp(z_x);
@@ -580,14 +571,13 @@ inline void mandel4d(double* arrays, int fractal_index, double z_x, double z_y, 
 					}
 				}
 				else {
-					for (int j = 1; j < max_iterations; j++) {
+					for (n = 1; n < max_iterations; n++) {
 						double zx2 = z_x * z_x;
 						double zy2 = z_y * z_y;
 						double zz2 = z_z * z_z;
 						double zw2 = z_w * z_w;
 						r = sqrt(zx2 + zy2 + zz2 + zw2);
 						if (r > range) {
-							orbit = j;
 							break;
 						}
 						if (fractal_index == 2) {
@@ -631,7 +621,7 @@ inline void mandel4d(double* arrays, int fractal_index, double z_x, double z_y, 
 				dist = 0.5 * log(r) * r / dr;
 				dO += dist;
 				if (surf_dist == 0.0) { surf_dist = dist * min_dist; }
-				if (dist < surf_dist) { ot = i; col = (double)orbit; break; }
+				if (dist < surf_dist) { ot = i; col = (double)n; break; }
 				if (dO > 100.0) { ot = 0; col = 0; break; }
 			}
 			double together = 0.0;
@@ -674,8 +664,8 @@ inline void buddhabrot(double* arrays, int fractal_index, double z_x, double z_i
 		c_imag = ismandel ? (rand_imag * y_size + y_min) : c_i;
 		if (inverse != 0.0) {
 			power_sum_invert = 1.0 / (c_real * c_real + c_imag * c_imag) * inverse;
-			c_real = c_real * power_sum_invert + ((1.0 - inverse) * c_real);
-			c_imag = c_imag * power_sum_invert + ((1.0 - inverse) * c_imag);
+			c_real = c_real * power_sum_invert + (1.0 - inverse) * c_real;
+			c_imag = c_imag * power_sum_invert + (1.0 - inverse) * c_imag;
 		}
 		z_real = ismandel ? c_real : (rand_real * x_size + x_min);
 		z_imag = ismandel ? c_imag : (rand_imag * y_size + y_min);
@@ -882,6 +872,17 @@ inline vec3 hue(double inp_x, double inp_y, double inp_z, double H) {
 	return ret;
 }
 
+inline vec3 fast_hue(double inp_x, double inp_y, double inp_z, double H) {
+	H = fmod(H, 6.0); if (H < 0.0) { H += 6.0; }
+	int sector = (int)H;
+	if (sector == 0) return vec3 { inp_z, 5.0 * inp_z * (1.0 - inp_y * (1.0 - (H - sector))), 5.0 * inp_z * (1.0 - inp_y) };
+	else if (sector == 1) return vec3 { 5.0 * inp_z * (1.0 - inp_y * (H - sector)), inp_z, 5.0 * inp_z * (1.0 - inp_y) };
+	else if (sector == 2) return vec3 { 5.0 * inp_z * (1.0 - inp_y), inp_z, 5.0 * inp_z * (1.0 - inp_y * (1.0 - (H - sector))) };
+	else if (sector == 3) return vec3 { 5.0 * inp_z * (1.0 - inp_y), 5.0 * inp_z * (1.0 - inp_y * (H - sector)), inp_z };
+	else if (sector == 4) return vec3 { 5.0 * inp_z * (1.0 - inp_y * (1.0 - (H - sector))), 5.0 * inp_z * (1.0 - inp_y), inp_z };
+	return vec3 { inp_z, 5.0 * inp_z * (1.0 - inp_y), 5.0 * inp_z * (1.0 - inp_y * (H - sector)) };
+}
+
 int main() {
 	double z_x = 0.0, z_y = 0.0, z_z = 0.0, z_w = 0.0, c_x = 0.0, c_y = 0.0, c_z = 0.0, c_w = 0.0;
 	double power = 2.0, range = 8.0, inverse = 0, mult_power = 1.0, scale_mult_power = 1.0, scale_inverse = 1.0, scale_power = 1.0;
@@ -898,15 +899,14 @@ int main() {
 	double* prewiew_mandelbrot = (double*)malloc(sizeof(double));
 	double* prewiew_julia = (double*)malloc(sizeof(double));
 	double* render = (double*)malloc(render_width * render_height * sizeof(double));
-	std::vector<char> repeats_button;
-	std::string row, row1;
-	ColorBit last_color = Black;
-	ColorBit temp_color = Black;
+	ColorBit last_color = Black, temp_color = Black;
 	ColorBit style[] = { Blue, DarkCyan, Cyan, DarkGreen, Green, Yellow, DarkGray, Red, DarkRed, Black };
 	char gradient[] = "..54SUEaPXAhHmO6bdqp9RGMDW#N8B%0$Q&";
 	int gradient_size = sizeof(gradient) / sizeof(gradient[0]);
 	int style_size = sizeof(style) / sizeof(style[0]);
 	ImageBmp image(render_width, render_height);
+	std::string row, row1;
+	std::vector<char> repeats_button;
 	std::vector<std::vector<char>> push_button, sequence_button;
 	while (1) {
 		Size resolution = get_size_screen();
@@ -931,21 +931,21 @@ int main() {
 			if (type_fractal == 2 || type_fractal == 3) {
 				get_fractal(prewiew_mandelbrot, fractal_index, is_buddha + is_mandelbulb * 2 + is_mandel4d * 3, z_x, z_y, c_x, c_y, factor_julia, power, range, inverse, mult_power, 0, width / 2, height, is_buddha ? iteration / 1.25 : iteration, (width >= 200 ? mult_sample * 0.5 : mult_sample * 0.8) * width * height, min_dist, rot_x, rot_z, raymarch_iterations, phi_shift, fomula_3d, c_z, c_w, z_z, z_w);
 				get_fractal(prewiew_julia, fractal_index, is_buddha + is_mandelbulb * 2 + is_mandel4d * 3, z_x, z_y, c_x, c_y, factor_mandelbrot, power, range, inverse, mult_power, 1, width / 2, height, is_buddha ? iteration / 1.25 : iteration, (width >= 200 ? mult_sample * 0.5 : mult_sample * 0.8) * width * height, min_dist, rot_x, rot_z, raymarch_iterations, phi_shift, fomula_3d, c_z, c_w, z_z, z_w);
-				int index = 0;
+				int index = 0, half_width = width / 2;
 				for (int y = 0; y < height; y++) {
 					if (type_fractal == 2) {
-						for (int x = 0; x < width / 2; x++) {
-							prewiew[index++] = prewiew_julia[x + y * (width / 2)];
+						for (int x = 0; x < half_width; x++) {
+							prewiew[index++] = prewiew_julia[x + y * half_width];
 						}
 						for (int x = 0; x < width / 2; x++) {
-							prewiew[index++] = prewiew_mandelbrot[x + y * (width / 2)];
+							prewiew[index++] = prewiew_mandelbrot[x + y * half_width];
 						}
 						if (width % 2 == 1) { prewiew[index++] = 0.0; }
 					}
 					if (type_fractal == 3) {
 						for (int x = 0; x < width / 2; x++) {
-							prewiew[index++] = prewiew_julia[x + y * (width / 2)];
-							prewiew[index++] = prewiew_mandelbrot[x + y * (width / 2)];
+							prewiew[index++] = prewiew_julia[x + y * half_width];
+							prewiew[index++] = prewiew_mandelbrot[x + y * half_width];
 						}
 						if (width % 2 == 1) { prewiew[index++] = 0.0; }
 					}
@@ -962,7 +962,7 @@ int main() {
 							double ot_div = val - col;
 							r = g = b = 0;
 							if (ot_div != 0.0) {
-								double bright = (1.0 - 1.5 * pow(ot_div, 1.1)) * mult_light * 108.118042163;
+								double bright = (1.0 - 1.5 * ot_div) * mult_light * 108.118042163; // pow(ot_div, 1.1)
 								vec3 color = hue(0.85, 0.45, 0.15, 1.0 + clamp(col, 3.0, 20.0) * 80.0);
 								r = clamp(color.x * bright, 0, 255);
 								g = clamp(color.y * bright, 0, 255);
@@ -1007,7 +1007,7 @@ int main() {
 							double col = val <= 0 ? 0 : (int)val;
 							double ot_div = val - col;
 							if (ot_div != 0.0) {
-								double bright = (1.0 - 1.5 * pow(ot_div, 1.1)) * 255.0;
+								double bright = (1.0 - 1.5 * ot_div) * 255.0;
 								vec3 color = hue(0.15, 0.45, 0.85, 1.0 + clamp(col, 3, 20) * 80.0);
 								val = (clamp(color.x * bright, 0, 255) + clamp(color.y * bright, 0, 255) + clamp(color.z * bright, 0, 255)) / 3.0;
 							}
@@ -1043,7 +1043,7 @@ int main() {
 							double ot_div = val - col;
 							r = g = b = 0;
 							if (ot_div != 0.0) {
-								double bright = (1.0 - 1.5 * pow(ot_div, 1.1)) * 255.0;
+								double bright = (1.0 - 1.5 * ot_div) * 255.0;
 								vec3 hueo = hue(0.85, 0.45, 0.15, 1.0 + clamp(col, 3.0, 20.0) * 80.0);
 								r = clamp(hueo.x * bright, 0, 255);
 								g = clamp(hueo.y * bright, 0, 255);
